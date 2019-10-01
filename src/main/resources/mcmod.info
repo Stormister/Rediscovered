@@ -1,19 +1,16 @@
 [
-  {
-    "modid": "rediscovered",
-    "name": "Rediscovered",
-    "description": "Adds unused, unimplemented, and removed things from Minecraft's past.",
-    "version": "${version}",
-    "mcversion": "${mcversion}",
-    "url": "",
-    "updateUrl": "",
-    "authorList": [
-      "Stormister"
-    ],
-    "credits": "",
-    "logoFile": "",
-    "screenshots": [],
-    "dependencies": []
-  }
+{
+  "modid": "rediscovered",
+  "name": "Rediscovered Mod",
+  "description": "A compilation of all of the things that were unused, unimplemented, or removed from Minecraft's files!",
+  "version": "1.3",
+  "mcversion": "1.8.8",
+  "url": "",
+  "updateUrl": "",
+  "authors": ["Stormister"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
 ]
-

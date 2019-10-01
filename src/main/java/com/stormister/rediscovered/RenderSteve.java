@@ -17,7 +17,8 @@ public class RenderSteve extends RenderLiving
 
   public RenderSteve(boolean anim, String modelname, ResourceLocation[] textures)
   {
-    super(null, 0.5F);
+	//TODO: Possibly change RenderManager to something other than null
+      super(null, null, 0.5F);
     if (textures.length > 0)
       this.textures = textures;
     else {

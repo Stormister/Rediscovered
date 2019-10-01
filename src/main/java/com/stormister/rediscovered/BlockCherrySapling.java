@@ -3,133 +3,122 @@ package com.stormister.rediscovered;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.block.Block;
+import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockPlanks;
 import net.minecraft.block.BlockSapling;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.IGrowable;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.properties.PropertyInteger;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.feature.WorldGenBigTree;
+import net.minecraft.world.gen.feature.WorldGenCanopyTree;
+import net.minecraft.world.gen.feature.WorldGenForest;
+import net.minecraft.world.gen.feature.WorldGenMegaJungle;
+import net.minecraft.world.gen.feature.WorldGenMegaPineTree;
+import net.minecraft.world.gen.feature.WorldGenSavannaTree;
+import net.minecraft.world.gen.feature.WorldGenTaiga2;
+import net.minecraft.world.gen.feature.WorldGenTrees;
 import net.minecraft.world.gen.feature.WorldGenerator;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class BlockCherrySapling extends BlockSapling
+public class BlockCherrySapling extends BlockBush implements IGrowable
 {
-	private static final String[] saplings = new String[] {"cherry"};
-	private IIcon[] textures;
-	String texture;
-	private static final int TYPES = 15;
+	private static final PropertyBool TYPE = PropertyBool.create("cherry");
+    public static final PropertyInteger STAGE = PropertyInteger.create("stage", 0, 1);
+    private final String name = "CherrySapling";
 
-	public BlockCherrySapling(String texture)
-	{
-		this.setHardness(0.0F);
-		this.setStepSound(Block.soundTypeGrass);
-		this.texture = texture;
-	}
+    protected BlockCherrySapling()
+    {
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
+        float f = 0.4F;
+        this.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 2.0F, 0.5F + f);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+    }
+    
+    public String getName()
+    {
+    	return name;
+    }
 
-	@Override
-	public void registerBlockIcons(IIconRegister iconRegister)
-	{
-		textures = new IIcon[saplings.length];
+    public void updateTick(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!worldIn.isRemote)
+        {
+            super.updateTick(worldIn, pos, state, rand);
 
-		for (int i = 0; i < saplings.length; ++i) {
-			textures[i] = iconRegister.registerIcon(mod_Rediscovered.modid + ":" + texture);
-		}
+            if (worldIn.getLightFromNeighbors(pos.up()) >= 9 && rand.nextInt(7) == 0)
+            {
+                this.grow(worldIn, pos, state, rand);
+            }
+        }
+    }
 
-	}
+    public void grow(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (((Integer)state.getValue(STAGE)).intValue() == 0)
+        {
+            worldIn.setBlockState(pos, state.cycleProperty(STAGE), 4);
+        }
+        else
+        {
+            this.generateTree(worldIn, pos, state, rand);
+        }
+    }
 
-	@Override
-	public IIcon getIcon(int side, int meta)
-	{
-		if (meta < 0 || meta >= saplings.length) {
-			meta = 0;
-		}
+    public void generateTree(World worldIn, BlockPos pos, IBlockState state, Random rand)
+    {
+        if (!net.minecraftforge.event.terraingen.TerrainGen.saplingGrowTree(worldIn, rand, pos)) return;
+        Object object = rand.nextInt(10) == 0 ? new WorldGenBigTree(true) : new WorldGenTrees(true);
+        object = new WorldGenCherryTrees(true);
 
-		return textures[meta];
-	}
+        IBlockState iblockstate1 = Blocks.air.getDefaultState();
 
-	@Override
-	public void getSubBlocks(Item block, CreativeTabs creativeTabs, List list) 
-	{
-		for (int i = 0; i < saplings.length; ++i) 
-		{
-			list.add(new ItemStack(block, 1, i));
-		}
-	}
+        worldIn.setBlockState(pos, iblockstate1, 4);
 
-	public boolean isValidPosition(World world, int x, int y, int z, int metadata)
-	{
-		Block block = world.getBlock(x, y - 1, z);
+        if (!((WorldGenerator)object).generate(worldIn, rand, pos))
+        {
+            worldIn.setBlockState(pos, state, 4);
+        }
+    }
+    public boolean canGrow(World worldIn, BlockPos pos, IBlockState state, boolean isClient)
+    {
+        return true;
+    }
 
-		return block == Blocks.grass || block == Blocks.dirt || block == Blocks.farmland || block.canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, this);
-		
-	}
+    public boolean canUseBonemeal(World worldIn, Random rand, BlockPos pos, IBlockState state)
+    {
+        return (double)worldIn.rand.nextFloat() < 0.45D;
+    }
 
-	@Override
-	public boolean canPlaceBlockOnSide(World world, int x, int y, int z, int side)
-	{
-		return isValidPosition(world, x, y, z, -1);
-	}
+    public void grow(World worldIn, Random rand, BlockPos pos, IBlockState state)
+    {
+        this.grow(worldIn, pos, state, rand);
+    }
 
-	@Override
-	public boolean canBlockStay(World world, int x, int y, int z)
-	{
-		Block soil = world.getBlock(x, y - 1, z);
+    public IBlockState getStateFromMeta(int meta)
+    {
+        return this.getDefaultState().withProperty(TYPE, false).withProperty(STAGE, Integer.valueOf((meta & 8) >> 3));
+    }
 
-		if (world.getBlockMetadata(x, y, z) != 1)
-			return (world.getFullBlockLightValue(x, y, z) >= 8 || world.canBlockSeeTheSky(x, y, z)) &&
-					(soil != null && soil.canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, this));
-		else
-			return (world.getFullBlockLightValue(x, y, z) >= 8 || world.canBlockSeeTheSky(x, y, z)) &&
-					(soil != null && (soil.canSustainPlant(world, x, y - 1, z, ForgeDirection.UP, this)));
-	}
+    public int getMetaFromState(IBlockState state)
+    {
+        return 0;
+    }
 
-	@Override
-	public void updateTick(World world, int x, int y, int z, Random random)
-	{
-		if (!world.isRemote)
-		{
-			if (world.getBlockLightValue(x, y + 1, z) >= 9 && random.nextInt(7) == 0) 
-			{
-				this.func_149878_d(world, x, y, z, random);
-			}
-		}
-	}
-
-	@Override
-	public void func_149878_d(World world, int x, int y, int z, Random random)
-	{
-		int meta = world.getBlockMetadata(x, y, z) & TYPES;
-		Object obj = null;
-		int rnd = random.nextInt(8);
-
-		if (obj == null)
-		{
-				obj = new WorldGenCherryTrees(mod_Rediscovered.CherryLog, mod_Rediscovered.CherryLeaves, 0, 0);
-		}
-
-		if (obj != null)
-		{
-			world.setBlockToAir(x, y, z);
-
-			if (!((WorldGenerator)obj).generate(world, random, x, y, z)) 
-			{
-				world.setBlock(x, y, z, this, meta, 2);
-			}
-		}
-	}
-
-	@Override
-	public int damageDropped(int meta)
-	{
-		return meta & TYPES;
-	}
-
-	@Override
-	public int getDamageValue(World world, int x, int y, int z)
-	{
-		return world.getBlockMetadata(x, y, z) & TYPES;
-	}
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {TYPE, STAGE});
+    }
 }

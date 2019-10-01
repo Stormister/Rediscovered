@@ -3,12 +3,21 @@ package com.stormister.rediscovered;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.EntityAIAttackOnCollide;
+import net.minecraft.entity.ai.EntityAILookIdle;
+import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
+import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
+import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
+import net.minecraft.entity.ai.EntityAISwimming;
+import net.minecraft.entity.ai.EntityAIWander;
+import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.item.EntityMinecart;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -18,10 +27,22 @@ public class EntityGiant extends EntityMob
     public EntityGiant(World par1World)
     {
         super(par1World);
-        this.yOffset *= 6.0F;
         stepHeight = 5.0F;
-        this.setSize(this.width, this.height * 6.0F);
-        this.experienceValue = 30;
+        tasks.addTask(0, new EntityAISwimming(this));
+        tasks.addTask(1, new EntityAIAttackOnCollide(this, 0.5F, true));
+        tasks.addTask(2, new EntityAIMoveTowardsTarget(this, 1.0F, 32F));
+        tasks.addTask(2, new EntityAIAttackOnCollide(this, EntityPlayer.class, 1.0D, false));
+        tasks.addTask(7, new EntityAIWander(this, 0.5D));
+        tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
+        tasks.addTask(8, new EntityAILookIdle(this));
+        targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
+        setSize(this.width*2.0F, this.height * 7.0F);
+        experienceValue = 30;
+    }
+    
+    public float getEyeHeight()
+    {
+        return 10.440001F;
     }
 
 	protected void applyEntityAttributes()
@@ -30,17 +51,19 @@ public class EntityGiant extends EntityMob
 	    this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(100.0D);
 	    this.getEntityAttribute(SharedMonsterAttributes.followRange).setBaseValue(100.0D);
 	    this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(0.5D);
-	    this.getEntityAttribute(SharedMonsterAttributes.attackDamage).setBaseValue(45.0D);
+	    this.getEntityAttribute(SharedMonsterAttributes.attackDamage).setBaseValue(50.0D);
 	}
 	
 	/**
      * Takes a coordinate in and returns a weight to determine how likely this creature will try to path to the block.
      * Args: x, y, z
      */
-    public float getBlockPathWeight(int par1, int par2, int par3)
+	public float getBlockPathWeight(BlockPos p_180484_1_)
     {
-        return this.worldObj.getLightBrightness(par1, par2, par3) - 0.5F;
+        return this.worldObj.getLightBrightness(p_180484_1_) - 0.5F;
     }
+	
+	public void fall(float distance, float damageMultiplier){}
     
     /**
      * Returns the item ID for the item the mob drops on death.
@@ -73,12 +96,12 @@ public class EntityGiant extends EntityMob
     public boolean getCanSpawnHere()
     {
             int i = MathHelper.floor_double(this.posX);
-            int j = MathHelper.floor_double(this.boundingBox.minY);
+            int j = MathHelper.floor_double(this.posY);
             int k = MathHelper.floor_double(this.posZ);  
             return
-              this.getBlockPathWeight(i, j, k) >= 0.0F &&
-              this.worldObj.getCollidingBoundingBoxes(this, this.boundingBox).isEmpty() &&
-              !this.worldObj.isAnyLiquid(this.boundingBox);
+              this.getBlockPathWeight(new BlockPos(i, j, k)) >= 0.0F &&
+              this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty() &&
+              !this.worldObj.isAnyLiquid(this.getEntityBoundingBox());
     }
     
     /**
@@ -87,13 +110,5 @@ public class EntityGiant extends EntityMob
     public int getMaxSpawnedInChunk()
     {
         return 3;
-    }
-
-    /**
-     * Returns the amount of damage a mob should deal.
-     */
-    public int getAttackStrength(Entity par1Entity)
-    {
-        return 50;
     }
 }

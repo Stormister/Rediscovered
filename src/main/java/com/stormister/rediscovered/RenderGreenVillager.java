@@ -1,60 +1,49 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelVillager;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.passive.EntitySquid;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.ResourceLocation;
-
-import org.lwjgl.opengl.GL11;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class RenderGreenVillager extends RenderLiving
 {
-	private static final ResourceLocation field_110871_a = new ResourceLocation("textures/entity/villager/villager.png");
-	
-    /** Model of the villager. */
-    protected ModelGreenVillager villagerModel;
+    private static final ResourceLocation villagerTextures = new ResourceLocation("textures/entity/villager/villager.png");
 
-    public RenderGreenVillager()
+    private static final String __OBFID = "CL_00001032";
+
+    public RenderGreenVillager(RenderManager p_i46132_1_)
     {
-        super(new ModelGreenVillager(0.0F), 0.5F);
-        this.villagerModel = (ModelGreenVillager)this.mainModel;
+        super(p_i46132_1_, new ModelVillager(0.0F), 0.5F);
+        this.addLayer(new LayerCustomHead(this.func_177134_g().villagerHead));
     }
 
-    /**
-     * Determines wether Villager Render pass or not.
-     */
-    protected int shouldVillagerRenderPass(EntityGreenVillager par1EntityGreenVillager, int par2, float par3)
+    public ModelVillager func_177134_g()
     {
-        return -1;
+        return (ModelVillager)super.getMainModel();
     }
 
-    public void renderVillager(EntityGreenVillager par1EntityGreenVillager, double par2, double par4, double par6, float par8, float par9)
+    protected ResourceLocation getEntityTexture(EntityGreenVillager entity)
     {
-        super.doRender(par1EntityGreenVillager, par2, par4, par6, par8, par9);
+        
+        return net.minecraftforge.fml.common.registry.VillagerRegistry.getVillagerSkin(entity.getProfession(), villagerTextures);
+        
     }
 
-    /**
-     * Passes the Villager special render.
-     */
-    protected void passVillagerSpecialRender(EntityGreenVillager par1EntityGreenVillager, double par2, double par4, double par6) {}
-
-    protected void renderVillagerEquipedItems(EntityGreenVillager par1EntityGreenVillager, float par2)
+    protected void preRenderCallback(EntityGreenVillager p_77041_1_, float p_77041_2_)
     {
-        super.renderEquippedItems(par1EntityGreenVillager, par2);
-    }
+        float f1 = 0.9375F;
 
-    protected void preRenderVillager(EntityGreenVillager par1EntityGreenVillager, float par2)
-    {
-        float var3 = 0.9375F;
-
-        if (par1EntityGreenVillager.getGrowingAge() < 0)
+        if (p_77041_1_.getGrowingAge() < 0)
         {
-            var3 = (float)((double)var3 * 0.5D);
+            f1 = (float)((double)f1 * 0.5D);
             this.shadowSize = 0.25F;
         }
         else
@@ -62,65 +51,21 @@ public class RenderGreenVillager extends RenderLiving
             this.shadowSize = 0.5F;
         }
 
-        GL11.glScalef(var3, var3, var3);
+        GlStateManager.scale(f1, f1, f1);
     }
 
-    /**
-     * Passes the specialRender and renders it
-     */
-    protected void passSpecialRender(EntityLiving par1EntityLiving, double par2, double par4, double par6)
+    protected void preRenderCallback(EntityLivingBase p_77041_1_, float p_77041_2_)
     {
-        this.passVillagerSpecialRender((EntityGreenVillager)par1EntityLiving, par2, par4, par6);
+        this.preRenderCallback((EntityGreenVillager)p_77041_1_, p_77041_2_);
     }
 
-    /**
-     * Allows the render to do any OpenGL state modifications necessary before the model is rendered. Args:
-     * entityLiving, partialTickTime
-     */
-    protected void preRenderCallback(EntityLiving par1EntityLiving, float par2)
+    public ModelBase getMainModel()
     {
-        this.preRenderVillager((EntityGreenVillager)par1EntityLiving, par2);
+        return this.func_177134_g();
     }
 
-    /**
-     * Queries whether should render the specified pass or not.
-     */
-    protected int shouldRenderPass(EntityLiving par1EntityLiving, int par2, float par3)
+    protected ResourceLocation getEntityTexture(Entity entity)
     {
-        return this.shouldVillagerRenderPass((EntityGreenVillager)par1EntityLiving, par2, par3);
-    }
-
-    protected void renderEquippedItems(EntityLiving par1EntityLiving, float par2)
-    {
-        this.renderVillagerEquipedItems((EntityGreenVillager)par1EntityLiving, par2);
-    }
-
-    public void doRender(EntityLiving par1EntityLiving, double par2, double par4, double par6, float par8, float par9)
-    {
-        this.renderVillager((EntityGreenVillager)par1EntityLiving, par2, par4, par6, par8, par9);
-    }
-    
-    protected ResourceLocation getSquidTextures(EntityGreenVillager par1EntitySquid)
-    {
-        return field_110871_a;
-    }
-    
-    /**
-     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
-     */
-    protected ResourceLocation getEntityTexture(Entity par1Entity)
-    {
-        return this.getSquidTextures((EntityGreenVillager)par1Entity);
-    }
-
-    /**
-     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
-     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
-     * (Render<T extends Entity) and this method has signature public void doRender(T entity, double d, double d1,
-     * double d2, float f, float f1). But JAD is pre 1.5 so doesn't do that.
-     */
-    public void doRender(Entity par1Entity, double par2, double par4, double par6, float par8, float par9)
-    {
-        this.renderVillager((EntityGreenVillager)par1Entity, par2, par4, par6, par8, par9);
+        return this.getEntityTexture((EntityGreenVillager)entity);
     }
 }

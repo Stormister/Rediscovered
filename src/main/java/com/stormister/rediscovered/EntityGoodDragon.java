@@ -1,38 +1,42 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 import java.util.Iterator;
 import java.util.List;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockEndPortal;
+import net.minecraft.block.BlockTorch;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.EntityAIAttackOnCollide;
-import net.minecraft.entity.boss.EntityDragon;
-import net.minecraft.entity.boss.EntityDragonPart;
+import net.minecraft.entity.ai.EntityAIFollowOwner;
+import net.minecraft.entity.ai.EntityAIOwnerHurtByTarget;
+import net.minecraft.entity.ai.EntityAIOwnerHurtTarget;
 import net.minecraft.entity.boss.IBossDisplayData;
 import net.minecraft.entity.item.EntityEnderCrystal;
 import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.monster.IMob;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.passive.EntityPig;
+import net.minecraft.entity.passive.EntityTameable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRed, IMob
+public class EntityGoodDragon extends EntityTameable implements IEntityMultiPartRed, IMob
 {
     public double targetX;
     public double targetY;
@@ -95,6 +99,9 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     public EntityGoodDragon(World par1World)
     {
         super(par1World);
+        this.tasks.addTask(5, new EntityAIFollowOwner(this, 1.0D, 10.0F, 2.0F));
+        this.targetTasks.addTask(1, new EntityAIOwnerHurtByTarget(this));
+        this.targetTasks.addTask(2, new EntityAIOwnerHurtTarget(this));
         this.dragonPartArray = new EntityGoodDragonPart[] {this.dragonPartHead = new EntityGoodDragonPart(this, "head", 6.0F, 6.0F), this.dragonPartBody = new EntityGoodDragonPart(this, "body", 8.0F, 8.0F), this.dragonPartTail1 = new EntityGoodDragonPart(this, "tail", 4.0F, 4.0F), this.dragonPartTail2 = new EntityGoodDragonPart(this, "tail", 4.0F, 4.0F), this.dragonPartTail3 = new EntityGoodDragonPart(this, "tail", 4.0F, 4.0F), this.dragonPartWing1 = new EntityGoodDragonPart(this, "wing", 4.0F, 4.0F), this.dragonPartWing2 = new EntityGoodDragonPart(this, "wing", 4.0F, 4.0F), this.dragonPartTailSpike1 = new EntityGoodDragonPart(this, "tail", 2.0F, 2.0F), this.dragonPartTailSpike2 = new EntityGoodDragonPart(this, "tail", 2.0F, 2.0F), this.dragonPartTailSpike3 = new EntityGoodDragonPart(this, "tail", 2.0F, 2.0F), this.dragonPartTailSpike4 = new EntityGoodDragonPart(this, "tail", 2.0F, 2.0F), this.dragonPartTailSpike5 = new EntityGoodDragonPart(this, "tail", 2.0F, 2.0F)};
         this.setHealth(this.getMaxHealth());
         this.setSize(16.0F, 8.0F);
@@ -169,7 +176,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
             f = (this.rand.nextFloat() - 0.5F) * 8.0F;
             f1 = (this.rand.nextFloat() - 0.5F) * 4.0F;
             f2 = (this.rand.nextFloat() - 0.5F) * 8.0F;
-            this.worldObj.spawnParticle("largeexplode", this.posX + (double)f, this.posY + 2.0D + (double)f1, this.posZ + (double)f2, 0.0D, 0.0D, 0.0D);
+            this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, this.posX + (double)f, this.posY + 2.0D + (double)f1, this.posZ + (double)f2, 0.0D, 0.0D, 0.0D);
         }
         else
         {
@@ -246,7 +253,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
                         d7 = 10.0D;
                     }
 
-                    this.targetY = this.target.boundingBox.minY + d7;
+                    this.targetY = this.target.posY + d7;
                 }
                 else
                 {
@@ -286,8 +293,9 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
                 {
                     d9 = -50.0D;
                 }
-                Vec3 vec3 = Vec3.createVectorHelper(this.targetX - this.posX, this.targetY - this.posY, this.targetZ - this.posZ).normalize();
-                Vec3 vec31 = Vec3.createVectorHelper((double)MathHelper.sin(this.rotationYaw * (float)Math.PI / 180.0F), this.motionY, (double)(-MathHelper.cos(this.rotationYaw * (float)Math.PI / 180.0F))).normalize();
+                Vec3 vec3 = (new Vec3(this.targetX - this.posX, this.targetY - this.posY, this.targetZ - this.posZ)).normalize();
+                d8 = (double)(-MathHelper.cos(this.rotationYaw * (float)Math.PI / 180.0F));
+                Vec3 vec31 = (new Vec3((double)MathHelper.sin(this.rotationYaw * (float)Math.PI / 180.0F), this.motionY, d8)).normalize();
                 float f4 = (float)(vec31.dotProduct(vec3) + 0.5D) / 1.5F;
 
                 if (f4 < 0.0F)
@@ -319,7 +327,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
                     this.moveEntity(this.motionX, this.motionY, this.motionZ);
                 }
 
-                Vec3 vec32 = Vec3.createVectorHelper(this.motionX, this.motionY, this.motionZ).normalize();
+                Vec3 vec32 = (new Vec3(this.motionX, this.motionY, this.motionZ)).normalize();
                 float f8 = (float)(vec32.dotProduct(vec31) + 1.0D) / 2.0F;
                 f8 = 0.8F + 0.15F * f8;
                 this.motionX *= (double)f8;
@@ -353,9 +361,9 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 
             if (!this.worldObj.isRemote && this.hurtTime == 0)
             {
-                this.collideWithEntities(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartWing1.boundingBox.expand(4.0D, 2.0D, 4.0D).offset(0.0D, -2.0D, 0.0D)));
-                this.collideWithEntities(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartWing2.boundingBox.expand(4.0D, 2.0D, 4.0D).offset(0.0D, -2.0D, 0.0D)));
-                this.attackEntitiesInList(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartHead.boundingBox.expand(1.0D, 1.0D, 1.0D)));
+            	this.collideWithEntities(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartWing1.getEntityBoundingBox().expand(4.0D, 2.0D, 4.0D).offset(0.0D, -2.0D, 0.0D)));
+                this.collideWithEntities(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartWing2.getEntityBoundingBox().expand(4.0D, 2.0D, 4.0D).offset(0.0D, -2.0D, 0.0D)));
+                this.attackEntitiesInList(this.worldObj.getEntitiesWithinAABBExcludingEntity(this, this.dragonPartHead.getEntityBoundingBox().expand(1.0D, 1.0D, 1.0D)));
             }
 
             double[] adouble = this.getMovementOffsets(5, 1.0F);
@@ -425,8 +433,8 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 
         if (this.rand.nextInt(10) == 0)
         {
-            float var1 = 32.0F;
-            List var2 = this.worldObj.getEntitiesWithinAABB(EntityEnderCrystal.class, this.boundingBox.expand((double)var1, (double)var1, (double)var1));
+            float f = 32.0F;
+            List var2 = this.worldObj.getEntitiesWithinAABB(EntityEnderCrystal.class, this.getEntityBoundingBox().expand((double)f, (double)f, (double)f));
             EntityEnderCrystal var3 = null;
             double var4 = Double.MAX_VALUE;
             Iterator var6 = var2.iterator();
@@ -452,8 +460,8 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 	 */
 	private void collideWithEntities(List par1List)
 	{
-		double var2 = (this.dragonPartBody.boundingBox.minX + this.dragonPartBody.boundingBox.maxX) / 2.0D;
-		double var4 = (this.dragonPartBody.boundingBox.minZ + this.dragonPartBody.boundingBox.maxZ) / 2.0D;
+		double var2 = (this.dragonPartBody.getEntityBoundingBox().minX + this.dragonPartBody.getEntityBoundingBox().maxX) / 2.0D;
+        double var4 = (this.dragonPartBody.getEntityBoundingBox().minZ + this.dragonPartBody.getEntityBoundingBox().maxZ) / 2.0D;
 		Iterator var6 = par1List.iterator();
 
 		while (var6.hasNext())
@@ -529,7 +537,52 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     {
         return (float)MathHelper.wrapAngleTo180_double(par1);
     }
-    //TODO
+    
+    public boolean interactSpecial(EntityPlayer par1EntityPlayer)
+    {
+    	ItemStack itemstack = par1EntityPlayer.getCurrentEquippedItem();
+    	if (!this.isTamed() && itemstack != null && itemstack.getItem() == Items.bone)
+        {
+            if (!par1EntityPlayer.capabilities.isCreativeMode)
+            {
+                --itemstack.stackSize;
+            }
+
+            if (itemstack.stackSize <= 0)
+            {
+            	par1EntityPlayer.inventory.setInventorySlotContents(par1EntityPlayer.inventory.currentItem, (ItemStack)null);
+            }
+
+            if (!this.worldObj.isRemote)
+            {
+                if (this.rand.nextInt(3) == 0)
+                {
+                	par1EntityPlayer.addChatComponentMessage(new ChatComponentTranslation("You tamed me! Ah!", new Object[0]));
+                    this.setTamed(true);
+                    this.navigator.clearPathEntity();
+                    this.setAttackTarget((EntityLivingBase)null);
+//                    this.aiSit.setSitting(true);
+                    this.setOwnerId(par1EntityPlayer.getUniqueID().toString());
+                    this.playTameEffect(true);
+                    this.worldObj.setEntityState(this, (byte)7);
+                }
+                else
+                {
+                	par1EntityPlayer.addChatComponentMessage(new ChatComponentTranslation("Try Again!", new Object[0]));
+                    this.playTameEffect(false);
+                    this.worldObj.setEntityState(this, (byte)6);
+                }
+            }
+
+            return true;
+        }
+    	else
+    	{
+    		if(this.riddenByEntity == null)
+    			this.mount(par1EntityPlayer);
+    	}
+    	return true;
+    }
     /**
      * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
      */
@@ -556,14 +609,14 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     /**
      * Destroys all blocks that aren't associated with 'The End' inside the given bounding box.
      */
-    private boolean destroyBlocksInAABB(AxisAlignedBB par1AxisAlignedBB)
+    private boolean destroyBlocksInAABB(AxisAlignedBB p_70972_1_)
     {
-        int i = MathHelper.floor_double(par1AxisAlignedBB.minX);
-        int j = MathHelper.floor_double(par1AxisAlignedBB.minY);
-        int k = MathHelper.floor_double(par1AxisAlignedBB.minZ);
-        int l = MathHelper.floor_double(par1AxisAlignedBB.maxX);
-        int i1 = MathHelper.floor_double(par1AxisAlignedBB.maxY);
-        int j1 = MathHelper.floor_double(par1AxisAlignedBB.maxZ);
+        int i = MathHelper.floor_double(p_70972_1_.minX);
+        int j = MathHelper.floor_double(p_70972_1_.minY);
+        int k = MathHelper.floor_double(p_70972_1_.minZ);
+        int l = MathHelper.floor_double(p_70972_1_.maxX);
+        int i1 = MathHelper.floor_double(p_70972_1_.maxY);
+        int j1 = MathHelper.floor_double(p_70972_1_.maxZ);
         boolean flag = false;
         boolean flag1 = false;
 
@@ -573,14 +626,13 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
             {
                 for (int i2 = k; i2 <= j1; ++i2)
                 {
-                    Block j2 = this.worldObj.getBlock(k1, l1, i2);
-                    Block block = j2;
+                    Block block = this.worldObj.getBlockState(new BlockPos(k1, l1, i2)).getBlock();
 
-                    if (block != null)
+                    if (!block.isAir(worldObj, new BlockPos(k1, l1, i2)))
                     {
-                        if (block.canEntityDestroy(worldObj, k1, l1, i2, this) && this.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing"))
+                        if (block.canEntityDestroy(worldObj, new BlockPos(k1, l1, i2), this) && this.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing"))
                         {
-                            flag1 = this.worldObj.setBlockToAir(k1, l1, i2) || flag1;
+                            flag1 = this.worldObj.setBlockToAir(new BlockPos(k1, l1, i2)) || flag1;
                         }
                         else
                         {
@@ -593,10 +645,10 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 
         if (flag1)
         {
-            double d0 = par1AxisAlignedBB.minX + (par1AxisAlignedBB.maxX - par1AxisAlignedBB.minX) * (double)this.rand.nextFloat();
-            double d1 = par1AxisAlignedBB.minY + (par1AxisAlignedBB.maxY - par1AxisAlignedBB.minY) * (double)this.rand.nextFloat();
-            double d2 = par1AxisAlignedBB.minZ + (par1AxisAlignedBB.maxZ - par1AxisAlignedBB.minZ) * (double)this.rand.nextFloat();
-            this.worldObj.spawnParticle("largeexplode", d0, d1, d2, 0.0D, 0.0D, 0.0D);
+        	double d1 = p_70972_1_.minX + (p_70972_1_.maxX - p_70972_1_.minX) * (double)this.rand.nextFloat();
+            double d2 = p_70972_1_.minY + (p_70972_1_.maxY - p_70972_1_.minY) * (double)this.rand.nextFloat();
+            double d0 = p_70972_1_.minZ + (p_70972_1_.maxZ - p_70972_1_.minZ) * (double)this.rand.nextFloat();
+            this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, d1, d2, d0, 0.0D, 0.0D, 0.0D, new int[0]);
         }
 
         return flag;
@@ -604,7 +656,6 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 
     public boolean attackEntityFromPart(EntityGoodDragonPart par1EntityGoodDragonPart, DamageSource par2DamageSource, float par3)
 	{
-    	
 		if (par1EntityGoodDragonPart != this.dragonPartHead)
 		{
 			par3 = par3 / 4 + 1;
@@ -639,11 +690,6 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     {
         return super.attackEntityFrom(par1DamageSource, par2);
     }
-	@Override
-	public boolean isEntityInsideOpaqueBlock()
-    {
-		return false;
-    }
 
     /**
      * handles entity death timer, experience orb and particle creation
@@ -657,7 +703,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
             float var1 = (this.rand.nextFloat() - 0.5F) * 8.0F;
             float var2 = (this.rand.nextFloat() - 0.5F) * 4.0F;
             float var3 = (this.rand.nextFloat() - 0.5F) * 8.0F;
-            this.worldObj.spawnParticle("hugeexplosion", this.posX + (double)var1, this.posY + 2.0D + (double)var2, this.posZ + (double)var3, 0.0D, 0.0D, 0.0D);
+            this.worldObj.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE, this.posX + (double)var1, this.posY + 2.0D + (double)var2, this.posZ + (double)var3, 0.0D, 0.0D, 0.0D);
         }
 
         int var4;
@@ -679,7 +725,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
 
             if (this.deathTicks == 1)
             {
-                this.worldObj.playAuxSFX(1018, (int)this.posX, (int)this.posY, (int)this.posZ, 0);
+            	this.worldObj.playBroadcastSound(1018, new BlockPos(this), 0);
             }
         }
 
@@ -697,7 +743,7 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
                 this.worldObj.spawnEntityInWorld(new EntityXPOrb(this.worldObj, this.posX, this.posY, this.posZ, var5));
             }
 
-            this.createEnderPortal(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posZ));
+            this.func_175499_a(new BlockPos(this.posX, 64.0D, this.posZ));
             this.setDead();
         }
     }
@@ -705,53 +751,58 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     /**
      * Creates the ender portal leading back to the normal world after defeating the enderdragon.
      */
-    private void createEnderPortal(int par1, int par2)
+    private void func_175499_a(BlockPos p_175499_1_)
     {
-        byte var3 = 64;
-        byte var4 = 4;
+        boolean flag = true;
+        double d0 = 12.25D;
+        double d1 = 6.25D;
 
-        for (int var5 = var3 - 1; var5 <= var3 + 32; ++var5)
+        for (int i = -1; i <= 32; ++i)
         {
-            for (int var6 = par1 - var4; var6 <= par1 + var4; ++var6)
+            for (int j = -4; j <= 4; ++j)
             {
-                for (int var7 = par2 - var4; var7 <= par2 + var4; ++var7)
+                for (int k = -4; k <= 4; ++k)
                 {
-                    double var8 = (double)(var6 - par1);
-                    double var10 = (double)(var7 - par2);
-                    double var12 = var8 * var8 + var10 * var10;
+                    double d2 = (double)(j * j + k * k);
 
-                    if (var12 <= ((double)var4 - 0.5D) * ((double)var4 - 0.5D))
+                    if (d2 <= 12.25D)
                     {
-                        if (var5 < var3)
+                        BlockPos blockpos1 = p_175499_1_.add(j, i, k);
+
+                        if (i < 0)
                         {
-                            if (var12 <= ((double)(var4 - 1) - 0.5D) * ((double)(var4 - 1) - 0.5D))
+                            if (d2 <= 6.25D)
                             {
-                                this.worldObj.setBlock(var6, var5, var7, mod_Rediscovered.CryingObsidian);
+                                this.worldObj.setBlockState(blockpos1, mod_Rediscovered.CryingObsidian.getDefaultState());
                             }
                         }
-                        else if (var5 > var3)
+                        else if (i > 0)
                         {
-                            this.worldObj.setBlock(var6, var5, var7, Blocks.air);
+                            this.worldObj.setBlockState(blockpos1, Blocks.air.getDefaultState());
                         }
-                        else if (var12 > ((double)(var4 - 1) - 0.5D) * ((double)(var4 - 1) - 0.5D))
+                        else if (d2 > 6.25D)
                         {
-                            this.worldObj.setBlock(var6, var5, var7, mod_Rediscovered.CryingObsidian);
+                            this.worldObj.setBlockState(blockpos1, mod_Rediscovered.CryingObsidian.getDefaultState());
                         }
                         else
                         {
-                            this.worldObj.setBlock(var6, var5, var7, Blocks.fire);
+                            this.worldObj.setBlockState(blockpos1, Blocks.fire.getDefaultState());
                         }
                     }
-                    
                 }
             }
         }
 
-        this.worldObj.setBlock(par1, var3 + 0, par2, mod_Rediscovered.CryingObsidian);
-        this.worldObj.setBlock(par1, var3 + 1, par2, mod_Rediscovered.CryingObsidian);
-        this.worldObj.setBlock(par1, var3 + 2, par2, mod_Rediscovered.CryingObsidian);
-        this.worldObj.setBlock(par1, var3 + 3, par2, mod_Rediscovered.CryingObsidian);
-        this.worldObj.setBlock(par1, var3 + 4, par2, mod_Rediscovered.DragonEggRed);
+        this.worldObj.setBlockState(p_175499_1_, mod_Rediscovered.CryingObsidian.getDefaultState());
+        this.worldObj.setBlockState(p_175499_1_.up(), mod_Rediscovered.CryingObsidian.getDefaultState());
+        BlockPos blockpos2 = p_175499_1_.up(2);
+        this.worldObj.setBlockState(blockpos2, mod_Rediscovered.CryingObsidian.getDefaultState());
+        this.worldObj.setBlockState(blockpos2.west(), Blocks.torch.getDefaultState().withProperty(BlockTorch.FACING, EnumFacing.EAST));
+        this.worldObj.setBlockState(blockpos2.east(), Blocks.torch.getDefaultState().withProperty(BlockTorch.FACING, EnumFacing.WEST));
+        this.worldObj.setBlockState(blockpos2.north(), Blocks.torch.getDefaultState().withProperty(BlockTorch.FACING, EnumFacing.SOUTH));
+        this.worldObj.setBlockState(blockpos2.south(), Blocks.torch.getDefaultState().withProperty(BlockTorch.FACING, EnumFacing.NORTH));
+        this.worldObj.setBlockState(p_175499_1_.up(3), mod_Rediscovered.CryingObsidian.getDefaultState());
+        this.worldObj.setBlockState(p_175499_1_.up(4), mod_Rediscovered.DragonEggRed.getDefaultState());
     }
 
     /**
@@ -774,6 +825,23 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     public boolean canBeCollidedWith()
     {
         return false;
+    }
+    
+    public boolean getCanSpawnHere()
+    {
+//            int i = MathHelper.floor_double(this.posX);
+//            int j = MathHelper.floor_double(this.posY);
+//            int k = MathHelper.floor_double(this.posZ);  
+//            return
+//              this.getBlockPathWeight(new BlockPos(i, j, k)) >= 0.0F &&
+//              this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty() &&
+//              !this.worldObj.isAnyLiquid(this.getEntityBoundingBox());
+    	return true;
+    }
+    
+    public float getBlockPathWeight(BlockPos p_180484_1_)
+    {
+        return this.worldObj.getLightBrightness(p_180484_1_) - 0.5F;
     }
 
     @SideOnly(Side.CLIENT)
@@ -814,4 +882,9 @@ public class EntityGoodDragon extends EntityLiving implements IEntityMultiPartRe
     {
         return this.worldObj;
     }
+
+	@Override
+	public EntityAgeable createChild(EntityAgeable ageable) {
+		return null;
+	}
 }

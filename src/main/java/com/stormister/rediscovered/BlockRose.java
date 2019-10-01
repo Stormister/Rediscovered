@@ -1,59 +1,33 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 import java.util.List;
 
 import net.minecraft.block.BlockBush;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockRose extends BlockBush
 {
     private static final String[][] field_149860_M = new String[][] {{"rose"}};
     public static final String[] field_149859_a = new String[] {"rose"};
     public static final String[] field_149858_b = new String[] {"rose"};
-    @SideOnly(Side.CLIENT)
-    private IIcon[] field_149861_N;
     private int field_149862_O;
-    private static final String __OBFID = "CL_00000246";
+    private final String name = "Rose";
 
     protected BlockRose(int par1)
     {
-        super(Material.plants);
+        super();
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
         this.field_149862_O = par1;
-    }
-
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    @SideOnly(Side.CLIENT)
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
-    {
-        if (p_149691_2_ >= this.field_149861_N.length)
-        {
-            p_149691_2_ = 0;
-        }
-
-        return this.field_149861_N[p_149691_2_];
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void registerBlockIcons(IIconRegister p_149651_1_)
-    {
-        this.field_149861_N = new IIcon[field_149860_M[this.field_149862_O].length];
-
-        for (int i = 0; i < this.field_149861_N.length; ++i)
-        {
-            this.field_149861_N[i] = p_149651_1_.registerIcon(mod_Rediscovered.modid + ":" + "rose");
-        }
     }
 
     /**
@@ -62,18 +36,6 @@ public class BlockRose extends BlockBush
     public int damageDropped(int p_149692_1_)
     {
         return p_149692_1_;
-    }
-
-    /**
-     * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
-     */
-    @SideOnly(Side.CLIENT)
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
-    {
-        for (int i = 0; i < this.field_149861_N.length; ++i)
-        {
-            p_149666_3_.add(new ItemStack(p_149666_1_, 1, i));
-        }
     }
 
     public static BlockFlower func_149857_e(String p_149857_0_)
@@ -130,5 +92,10 @@ public class BlockRose extends BlockBush
         }
 
         return 0;
+    }
+    
+    public String getName()
+    {
+    	return name;
     }
 }

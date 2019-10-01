@@ -1,10 +1,12 @@
 package com.stormister.rediscovered;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityPotion;
@@ -12,21 +14,31 @@ import net.minecraft.init.Items;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.potion.PotionHelper;
 import net.minecraft.stats.StatList;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ItemPotionRediscovered extends Item
 {
-	public IIcon[] icons = new IIcon[6];
+	private Map effectCache = Maps.newHashMap();
+	private static final Map SUB_ITEMS_CACHE = Maps.newLinkedHashMap();
+	private final String name = "RediscoveredPotion";
     public ItemPotionRediscovered()
     {
         super();
         this.setHasSubtypes(true);
+        this.setMaxDamage(0);
         this.setMaxStackSize(1);
         this.setCreativeTab(CreativeTabs.tabBrewing);
+        GameRegistry.registerItem(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
     }
 
     @SideOnly(Side.CLIENT)
@@ -45,8 +57,58 @@ public class ItemPotionRediscovered extends Item
     	else
     		return "";
     }
+    
+    public List getEffects(ItemStack stack)
+    {
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("CustomPotionEffects", 9))
+        {
+            ArrayList arraylist = Lists.newArrayList();
+            NBTTagList nbttaglist = stack.getTagCompound().getTagList("CustomPotionEffects", 10);
 
-    public ItemStack onEaten(ItemStack itemStack, World p_77654_2_, EntityPlayer entityPlayer)
+            for (int i = 0; i < nbttaglist.tagCount(); ++i)
+            {
+                NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
+                PotionEffect potioneffect = PotionEffect.readCustomPotionEffectFromNBT(nbttagcompound);
+
+                if (potioneffect != null)
+                {
+                    arraylist.add(potioneffect);
+                }
+            }
+
+            return arraylist;
+        }
+        else
+        {
+            List list = (List)this.effectCache.get(Integer.valueOf(stack.getMetadata()));
+
+            if (list == null)
+            {
+                list = PotionHelper.getPotionEffects(stack.getMetadata(), false);
+                this.effectCache.put(Integer.valueOf(stack.getMetadata()), list);
+            }
+
+            return list;
+        }
+    }
+
+    /**
+     * Returns a list of effects for the specified potion damage value.
+     */
+    public List getEffects(int meta)
+    {
+        List list = (List)this.effectCache.get(Integer.valueOf(meta));
+
+        if (list == null)
+        {
+            list = PotionHelper.getPotionEffects(meta, false);
+            this.effectCache.put(Integer.valueOf(meta), list);
+        }
+
+        return list;
+    }
+
+    public ItemStack onItemUseFinish(ItemStack itemStack, World world, EntityPlayer entityPlayer)
     {
     	if(getType(itemStack) == "Nausea")
     		entityPlayer.addPotionEffect(new PotionEffect(Potion.confusion.id, 30 * 20, 6));
@@ -72,7 +134,7 @@ public class ItemPotionRediscovered extends Item
     /**
      * How long it takes to use or consume an item
      */
-    public int getMaxItemUseDuration(ItemStack p_77626_1_)
+    public int getMaxItemUseDuration(ItemStack par1ItemStack)
     {
         return 32;
     }
@@ -80,9 +142,9 @@ public class ItemPotionRediscovered extends Item
     /**
      * returns the action that specifies what animation to play when the items is being used
      */
-    public EnumAction getItemUseAction(ItemStack p_77661_1_)
+    public EnumAction getItemUseAction(ItemStack par1ItemStack)
     {
-        return EnumAction.drink;
+        return EnumAction.DRINK;
     }
 
     /**
@@ -90,7 +152,7 @@ public class ItemPotionRediscovered extends Item
      */
     public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn)
     {
-        if (isSplash(itemStackIn.getItemDamage()))
+        if (isSplash(itemStackIn.getMetadata()))
         {
             if (!playerIn.capabilities.isCreativeMode)
             {
@@ -101,7 +163,7 @@ public class ItemPotionRediscovered extends Item
 
             if (!worldIn.isRemote)
             {
-                worldIn.spawnEntityInWorld(new EntityRediscoveredPotion(worldIn, playerIn, itemStackIn));
+                worldIn.spawnEntityInWorld(new EntityRediscoveredPotion(worldIn, playerIn, itemStackIn.getMetadata()));
             }
 
             return itemStackIn;
@@ -126,6 +188,11 @@ public class ItemPotionRediscovered extends Item
             par3List.add("\u00a77" + "Slow Mining (0:30)"); 
         
     }
+
+    public String getName()
+    {
+    	return name;
+    }
     
     public static boolean isSplash(int meta)
     {
@@ -134,7 +201,7 @@ public class ItemPotionRediscovered extends Item
     
     @Override
     public String getUnlocalizedName(ItemStack stack) {
-        return super.getUnlocalizedName() + "." + getType(stack) + (isSplash(stack.getItemDamage()) ? ".Splash" : "");
+        return super.getUnlocalizedName() + "." + getType(stack) + (isSplash(stack.getMetadata()) ? ".Splash" : "");
     }
 
     @Override
@@ -148,22 +215,4 @@ public class ItemPotionRediscovered extends Item
         subItems.add(new ItemStack(itemIn, 1, 102));
     }
     
-    @Override
-    public IIcon getIconFromDamage(int meta) {
-        if ((meta>2 && meta<100) || meta>102)
-            meta = 0;
-
-        if(meta>=100)
-        	return this.icons[meta-97];
-        else
-        	return this.icons[meta];
-    }
-    
-    @Override
-    public void registerIcons(IIconRegister reg) {
-        for (int i = 0; i < 3; i ++) {
-            this.icons[i] = reg.registerIcon(mod_Rediscovered.modid + ":potion_" + i);
-            this.icons[i+3] = reg.registerIcon(mod_Rediscovered.modid + ":potion_" + (i+100));
-        }
-    }
 }

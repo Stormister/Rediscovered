@@ -4,23 +4,34 @@ import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 public class BlockLantern extends Block
 {
+	private final String name = "Lantern";
+	
     public BlockLantern()
     {
         super(Material.air);
         this.setLightLevel(1.0f);
         this.setHardness(0.1f);
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
         setBlockBounds(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F);
         this.setTickRandomly(true);
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World par1World, int par2, int par3, int par4)
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
     {
         return null;
     }
@@ -30,20 +41,26 @@ public class BlockLantern extends Block
     {
         return false;
     }
+    
+    @Override
+    public int getRenderType()
+    {
+        return -1;
+    }
 
     @Override
-    public void updateTick(World w, int x, int y, int z, Random r)
+    public void updateTick(World w, BlockPos pos, IBlockState state, Random rand)
     {
-        if (w.getBlock(x, y, z) == mod_Rediscovered.Lantern)
+        if (w.getBlockState(pos) == mod_Rediscovered.Lantern)
         {
-            w.setBlock(x, y, z, Blocks.air);
+            w.setBlockState(pos, Blocks.air.getDefaultState());
         }
     }
 
     @Override
-    public boolean isAir(net.minecraft.world.IBlockAccess world, int x, int y, int z)
+    public boolean isAir(IBlockAccess world, BlockPos pos)
     {
-        if (world.getBlock(x, y, z).equals(this))
+        if (world.getBlockState(pos).equals(this))
         {
             return true;
         }
@@ -54,6 +71,7 @@ public class BlockLantern extends Block
     /**
      * Returns the quantity of items to drop on block destruction.
      */
+    @Override
     public int quantityDropped(Random random)
     {
         return 0;
@@ -62,17 +80,24 @@ public class BlockLantern extends Block
     /**
      * Returns the ID of the items to drop on destruction.
      */
-    public int idPicked(int i, Random random, int j)
+    @Override
+    public ItemStack getPickBlock(MovingObjectPosition target, World world, BlockPos pos)
     {
-        return 0;
+        return null;
     }
 
     /**
      * Returns the ID of the items to drop on destruction.
      */
-    public int idDropped(int i, Random random, int j)
+    @Override
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
-        return 0;
+        return null;
+    }
+    
+    public String getName()
+    {
+    	return name;
     }
     
 }

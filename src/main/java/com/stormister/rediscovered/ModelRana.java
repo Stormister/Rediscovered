@@ -221,9 +221,9 @@ public class ModelRana extends ModelBiped
       rightpigtail.rotationPointY = 0.0F;
       leftpigtail.rotationPointY = 0.0F;
       
-      if (onGround > -9990F)
+      if (swingProgress > -9990F)
       {
-          float f = onGround;
+          float f = swingProgress;
           body.rotateAngleY = MathHelper.sin(MathHelper.sqrt_float(f) * (float)Math.PI * 2.0F);
           rightarm.rotationPointZ = MathHelper.sin(body.rotateAngleY) * 4F;
           rightarm.rotationPointX = -MathHelper.cos(body.rotateAngleY) * 4F;
@@ -233,15 +233,15 @@ public class ModelRana extends ModelBiped
           leftarm.rotateAngleY += body.rotateAngleY;
           leftarm.rotateAngleX += body.rotateAngleY;
           
-          f = 1.0F - onGround;
+          f = 1.0F - swingProgress;
           f *= f;
           f *= f;
           f = 1.0F - f;
           float f2 = MathHelper.sin(f * (float)Math.PI);
-          float f4 = MathHelper.sin(onGround * (float)Math.PI) * -(head.rotateAngleX - 0.7F) * 0.75F;
+          float f4 = MathHelper.sin(swingProgress * (float)Math.PI) * -(head.rotateAngleX - 0.7F) * 0.75F;
           rightarm.rotateAngleX -= (double)f2 * 1.2D + (double)f4;
           rightarm.rotateAngleY += body.rotateAngleY * 2.0F;
-          rightarm.rotateAngleZ = MathHelper.sin(onGround * (float)Math.PI * 0.4F);
+          rightarm.rotateAngleZ = MathHelper.sin(swingProgress * (float)Math.PI * 0.4F);
       }
       
       rightarm.rotateAngleZ += MathHelper.cos(par3 * 0.09F) * 0.05F + 0.05F;

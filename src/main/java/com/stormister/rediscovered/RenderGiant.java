@@ -1,13 +1,13 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.monster.EntityGiantZombie;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import org.lwjgl.opengl.GL11;
 
@@ -19,9 +19,9 @@ public class RenderGiant extends RenderLiving
     /** Scale of the model to use */
     private float scale;
 
-    public RenderGiant(ModelBase par1ModelBase, float par2, float par3)
+    public RenderGiant(RenderManager p_i46173_1_, ModelBase par1ModelBase, float par2, float par3)
     {
-        super(par1ModelBase, par2 * par3);
+        super(p_i46173_1_, par1ModelBase, par2 * par3);
         this.scale = par3;
     }
 

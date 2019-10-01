@@ -1,157 +1,164 @@
 package com.stormister.rediscovered;
 
-import static net.minecraftforge.common.util.ForgeDirection.EAST;
-import static net.minecraftforge.common.util.ForgeDirection.NORTH;
-import static net.minecraftforge.common.util.ForgeDirection.SOUTH;
-import static net.minecraftforge.common.util.ForgeDirection.WEST;
-
 import java.util.Random;
 
-import cpw.mods.fml.common.network.internal.FMLNetworkHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryLargeChest;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
-import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockLockedChest extends BlockContainer
 {
-	
-	private static String textureName;
-	
-	@SideOnly(Side.CLIENT)
-    private IIcon field_149935_N;
-    @SideOnly(Side.CLIENT)
-    private IIcon field_149936_O;
+	private final String name = "LockedChest";
+	public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
 	
     public BlockLockedChest(String textureName)
     {
         super(Material.wood);
         this.setCreativeTab(CreativeTabs.tabDecorations);
-        this.textureName = textureName;
-    }
-	
-	/**
-     * Called whenever the block is added into the world. Args: world, x, y, z
-     */
-    public void onBlockAdded(World p_149726_1_, int p_149726_2_, int p_149726_3_, int p_149726_4_)
-    {
-        super.onBlockAdded(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_);
-        this.func_149930_e(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_);
-    }
-
-    private void func_149930_e(World p_149930_1_, int p_149930_2_, int p_149930_3_, int p_149930_4_)
-    {
-        if (!p_149930_1_.isRemote)
-        {
-            Block block = p_149930_1_.getBlock(p_149930_2_, p_149930_3_, p_149930_4_ - 1);
-            Block block1 = p_149930_1_.getBlock(p_149930_2_, p_149930_3_, p_149930_4_ + 1);
-            Block block2 = p_149930_1_.getBlock(p_149930_2_ - 1, p_149930_3_, p_149930_4_);
-            Block block3 = p_149930_1_.getBlock(p_149930_2_ + 1, p_149930_3_, p_149930_4_);
-            byte b0 = 3;
-
-            if (block.func_149730_j() && !block1.func_149730_j())
-            {
-                b0 = 3;
-            }
-
-            if (block1.func_149730_j() && !block.func_149730_j())
-            {
-                b0 = 2;
-            }
-
-            if (block2.func_149730_j() && !block3.func_149730_j())
-            {
-                b0 = 5;
-            }
-
-            if (block3.func_149730_j() && !block2.func_149730_j())
-            {
-                b0 = 4;
-            }
-
-            p_149930_1_.setBlockMetadataWithNotify(p_149930_2_, p_149930_3_, p_149930_4_, b0, 2);
-        }
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
     }
     
-    /**
-     * Called when the block is placed in the world.
-     */
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_)
+    public void onBlockAdded(World worldIn, BlockPos pos, IBlockState state)
     {
-        int l = MathHelper.floor_double((double)(p_149689_5_.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
+        this.setDefaultFacing(worldIn, pos, state);
+    }
 
-        if (l == 0)
+    private void setDefaultFacing(World worldIn, BlockPos pos, IBlockState state)
+    {
+        if (!worldIn.isRemote)
         {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 2, 2);
+            Block block = worldIn.getBlockState(pos.north()).getBlock();
+            Block block1 = worldIn.getBlockState(pos.south()).getBlock();
+            Block block2 = worldIn.getBlockState(pos.west()).getBlock();
+            Block block3 = worldIn.getBlockState(pos.east()).getBlock();
+            EnumFacing enumfacing = (EnumFacing)state.getValue(FACING);
+
+            if (enumfacing == EnumFacing.NORTH && block.isFullBlock() && !block1.isFullBlock())
+            {
+                enumfacing = EnumFacing.SOUTH;
+            }
+            else if (enumfacing == EnumFacing.SOUTH && block1.isFullBlock() && !block.isFullBlock())
+            {
+                enumfacing = EnumFacing.NORTH;
+            }
+            else if (enumfacing == EnumFacing.WEST && block2.isFullBlock() && !block3.isFullBlock())
+            {
+                enumfacing = EnumFacing.EAST;
+            }
+            else if (enumfacing == EnumFacing.EAST && block3.isFullBlock() && !block2.isFullBlock())
+            {
+                enumfacing = EnumFacing.WEST;
+            }
+
+            worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing), 2);
         }
+    }
+	
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
+    }
 
-        if (l == 1)
-        {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 5, 2);
-        }
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
+    {
+        worldIn.setBlockState(pos, state.withProperty(FACING, placer.getHorizontalFacing().getOpposite()), 2);
 
-        if (l == 2)
+        if (stack.hasDisplayName())
         {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 3, 2);
-        }
+            TileEntity tileentity = worldIn.getTileEntity(pos);
 
-        if (l == 3)
-        {
-            p_149689_1_.setBlockMetadataWithNotify(p_149689_2_, p_149689_3_, p_149689_4_, 4, 2);
-        }
-
-        if (p_149689_6_.hasDisplayName())
-        {
-            ((TileEntityFurnace)p_149689_1_.getTileEntity(p_149689_2_, p_149689_3_, p_149689_4_)).func_145951_a(p_149689_6_.getDisplayName());
+            if (tileentity instanceof TileEntityFurnace)
+            {
+                ((TileEntityFurnace)tileentity).setCustomInventoryName(stack.getDisplayName());
+            }
         }
     }
 
-    /**
-     * Gets the block's texture. Args: side, meta
-     */
-    @SideOnly(Side.CLIENT)
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    public int getRenderType()
     {
-    	if (p_149691_2_ == 0 && p_149691_1_ == 3)
-            return field_149936_O;
-           return p_149691_1_ == 1 ? this.field_149935_N : (p_149691_1_ == 0 ? this.field_149935_N : (p_149691_1_ != p_149691_2_ ? this.blockIcon : this.field_149936_O));
-        }
+        return 3;
+    }
 
     @SideOnly(Side.CLIENT)
-    public void registerBlockIcons(IIconRegister p_149651_1_)
+    public IBlockState getStateForEntityRender(IBlockState state)
     {
-        this.blockIcon = p_149651_1_.registerIcon(mod_Rediscovered.modid + ":" + textureName);
-        this.field_149936_O = p_149651_1_.registerIcon(mod_Rediscovered.modid + ":" + textureName + "_front");
-        this.field_149935_N = p_149651_1_.registerIcon(mod_Rediscovered.modid + ":" + textureName + "_top");
+        return this.getDefaultState().withProperty(FACING, EnumFacing.SOUTH);
+    }
+
+    public IBlockState getStateFromMeta(int meta)
+    {
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
+
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y)
+        {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
+    }
+
+    public int getMetaFromState(IBlockState state)
+    {
+        return ((EnumFacing)state.getValue(FACING)).getIndex();
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {FACING});
+    }
+    
+    public static void setState(boolean active, World worldIn, BlockPos pos)
+    {
+        IBlockState iblockstate = worldIn.getBlockState(pos);
+        TileEntity tileentity = worldIn.getTileEntity(pos);
+
+        worldIn.setBlockState(pos, mod_Rediscovered.LockedChest.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+        worldIn.setBlockState(pos, mod_Rediscovered.LockedChest.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
+
+        if (tileentity != null)
+        {
+            tileentity.validate();
+            worldIn.setTileEntity(pos, tileentity);
+        }
     }
 
     /**
      * Called upon block activation (right click on the block.)
      */
-    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer entityplayer, int par6, float par7, float par8, float par9)
+    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumFacing side, float hitX, float hitY, float hitZ)
     {
     	if(!world.isRemote)
         {
-        	entityplayer.openGui( mod_Rediscovered.instance, mod_Rediscovered.guiIDLockedChest, world, x, y, z);
+    		playerIn.openGui( mod_Rediscovered.instance, mod_Rediscovered.guiIDLockedChest, world, pos.getX(), pos.getY(), pos.getZ());
         }
         return true;   
+    }
+    
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
+        return Item.getItemFromBlock(mod_Rediscovered.LockedChest);
     }
 
     /**
@@ -161,4 +168,56 @@ public class BlockLockedChest extends BlockContainer
     {
         return new TileEntityLockedChest();
     }
+    
+    public String getName()
+    {
+    	return name;
+    }
+    
+    
+    @SideOnly(Side.CLIENT)
+
+    static final class SwitchEnumFacing
+        {
+            static final int[] FACING_LOOKUP = new int[EnumFacing.values().length];
+
+            static
+            {
+                try
+                {
+                    FACING_LOOKUP[EnumFacing.WEST.ordinal()] = 1;
+                }
+                catch (NoSuchFieldError var4)
+                {
+                    ;
+                }
+
+                try
+                {
+                    FACING_LOOKUP[EnumFacing.EAST.ordinal()] = 2;
+                }
+                catch (NoSuchFieldError var3)
+                {
+                    ;
+                }
+
+                try
+                {
+                    FACING_LOOKUP[EnumFacing.NORTH.ordinal()] = 3;
+                }
+                catch (NoSuchFieldError var2)
+                {
+                    ;
+                }
+
+                try
+                {
+                    FACING_LOOKUP[EnumFacing.SOUTH.ordinal()] = 4;
+                }
+                catch (NoSuchFieldError var1)
+                {
+                    ;
+                }
+            }
+        }
 }

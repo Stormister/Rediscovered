@@ -277,9 +277,9 @@ public class ModelSteve extends ModelBiped
       righttophand.rotateAngleY = 0.0F;
       lefttophand.rotateAngleY = 0.0F;
 
-      if (onGround > -9990F)
+      if (swingProgress > -9990F)
       {
-          float f = onGround;
+          float f = swingProgress;
           body.rotateAngleY = MathHelper.sin(MathHelper.sqrt_float(f) * (float)Math.PI * 2.0F) * 0.2F;
           rightarm.rotationPointZ = MathHelper.sin(body.rotateAngleY) * 5F;
           rightarm.rotationPointX = -MathHelper.cos(body.rotateAngleY) * 5F;
@@ -302,24 +302,24 @@ public class ModelSteve extends ModelBiped
           righttophand.rotateAngleY += body.rotateAngleY;
           lefttophand.rotateAngleY += body.rotateAngleY;
           lefttophand.rotateAngleX += body.rotateAngleY;
-          f = 1.0F - onGround;
+          f = 1.0F - swingProgress;
           f *= f;
           f *= f;
           f = 1.0F - f;
           float f2 = MathHelper.sin(f * (float)Math.PI);
-          float f4 = MathHelper.sin(onGround * (float)Math.PI) * -(head.rotateAngleX - 0.7F) * 0.75F;
+          float f4 = MathHelper.sin(swingProgress * (float)Math.PI) * -(head.rotateAngleX - 0.7F) * 0.75F;
           rightarm.rotateAngleX -= (double)f2 * 1.2D + (double)f4;
           rightarm.rotateAngleY += body.rotateAngleY * 2.0F;
-          rightarm.rotateAngleZ = MathHelper.sin(onGround * (float)Math.PI) * -0.4F;
+          rightarm.rotateAngleZ = MathHelper.sin(swingProgress * (float)Math.PI) * -0.4F;
           
           
           righthand.rotateAngleX -= (double)f2 * 1.2D + (double)f4;
           righthand.rotateAngleY += body.rotateAngleY * 2.0F;
-          righthand.rotateAngleZ = MathHelper.sin(onGround * (float)Math.PI) * -0.4F;
+          righthand.rotateAngleZ = MathHelper.sin(swingProgress * (float)Math.PI) * -0.4F;
           
           righttophand.rotateAngleX -= (double)f2 * 1.2D + (double)f4;
           righttophand.rotateAngleY += body.rotateAngleY * 2.0F;
-          righttophand.rotateAngleZ = MathHelper.sin(onGround * (float)Math.PI) * -0.4F;
+          righttophand.rotateAngleZ = MathHelper.sin(swingProgress * (float)Math.PI) * -0.4F;
       }
 
           body.rotateAngleX = 0.0F;

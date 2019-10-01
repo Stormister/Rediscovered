@@ -1,127 +1,138 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import java.util.List;
+import java.util.Iterator;
 import java.util.Random;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLog;
+import net.minecraft.block.BlockOldLog;
+import net.minecraft.block.BlockPlanks;
 import net.minecraft.block.BlockRotatedPillar;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class BlockCherryLog extends BlockRotatedPillar
+public class BlockCherryLog extends BlockLog
 {
     /** The type of tree this log came from. */
     public static final String[] woodType = new String[] {"cherry"};
-    @SideOnly(Side.CLIENT)
-    private IIcon field_111052_c;
-    @SideOnly(Side.CLIENT)
-    private IIcon tree_top;
-    String texture;
+    private final String name = "CherryLog";
 
     protected BlockCherryLog(String texture)
     {
-        super(Material.wood);
-        this.texture = texture;
+        super();
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
         this.setCreativeTab(CreativeTabs.tabBlock);
     }
-
+    
+    
+    
+    
     /**
-     * Returns the quantity of items to drop on block destruction.
+     * Convert the given metadata into a BlockState for this Block
      */
-    public int quantityDropped(Random par1Random)
+    public IBlockState getStateFromMeta(int meta)
     {
-        return 1;
-    }
+        IBlockState iblockstate = this.getDefaultState();
 
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public Block idDropped(int par1, Random par2Random, int par3)
-    {
-        return mod_Rediscovered.CherryLog;
-    }
-
-    /**
-     * Called on server worlds only when the block has been replaced by a different block ID, or the same block with a
-     * different metadata value, but before the new metadata value is set. Args: World, x, y, z, old block ID, old
-     * metadata
-     */
-    public void breakBlock(World par1World, int par2, int par3, int par4, int par5, int par6)
-    {
-        byte b0 = 4;
-        int j1 = b0 + 1;
-
-        if (par1World.checkChunksExist(par2 - j1, par3 - j1, par4 - j1, par2 + j1, par3 + j1, par4 + j1))
+        switch (meta & 12)
         {
-            for (int k1 = -b0; k1 <= b0; ++k1)
-            {
-                for (int l1 = -b0; l1 <= b0; ++l1)
-                {
-                    for (int i2 = -b0; i2 <= b0; ++i2)
-                    {
-                        Block j2 = par1World.getBlock(par2 + k1, par3 + l1, par4 + i2);
+            case 0:
+                iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.Y);
+                break;
+            case 4:
+                iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.X);
+                break;
+            case 8:
+                iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.Z);
+                break;
+            default:
+                iblockstate = iblockstate.withProperty(LOG_AXIS, BlockLog.EnumAxis.NONE);
+        }
 
-                        if (j2 != null)
-                        {
-                            j2.beginLeavesDecay(par1World, par2 + k1, par3 + l1, par4 + i2);
-                        }
-                    }
+        return iblockstate;
+    }
+
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
+    {
+        byte b0 = 0;
+        int i = b0;
+
+        switch (BlockCherryLog.SwitchEnumAxis.AXIS_LOOKUP[((BlockLog.EnumAxis)state.getValue(LOG_AXIS)).ordinal()])
+        {
+            case 1:
+                i |= 4;
+                break;
+            case 2:
+                i |= 8;
+                break;
+            case 3:
+                i |= 12;
+        }
+
+        return i;
+    }
+
+    protected BlockState createBlockState()
+    {
+        return new BlockState(this, new IProperty[] {LOG_AXIS});
+    }
+
+    static final class SwitchEnumAxis
+        {
+            static final int[] AXIS_LOOKUP = new int[BlockLog.EnumAxis.values().length];
+
+            static
+            {
+                try
+                {
+                    AXIS_LOOKUP[BlockLog.EnumAxis.X.ordinal()] = 1;
+                }
+                catch (NoSuchFieldError var3)
+                {
+                    ;
+                }
+
+                try
+                {
+                    AXIS_LOOKUP[BlockLog.EnumAxis.Z.ordinal()] = 2;
+                }
+                catch (NoSuchFieldError var2)
+                {
+                    ;
+                }
+
+                try
+                {
+                    AXIS_LOOKUP[BlockLog.EnumAxis.NONE.ordinal()] = 3;
+                }
+                catch (NoSuchFieldError var1)
+                {
+                    ;
                 }
             }
         }
-    }
-
-    @SideOnly(Side.CLIENT)
-
-    /**
-     * The icon for the side of the block.
-     */
-    protected IIcon getSideIcon(int par1)
+    
+    public String getName()
     {
-        return this.field_111052_c;
+    	return name;
     }
-
-    @SideOnly(Side.CLIENT)
-
-    /**
-     * The icon for the tops and bottoms of the block.
-     */
-    @Override
-    protected IIcon getTopIcon(int par1)
-    {
-        return this.tree_top;
-    }
-
-    @SideOnly(Side.CLIENT)
-
-    /**
-     * When this method is called, your block should register all the icons it needs with the given IconRegister. This
-     * is the only chance you get to register icons.
-     */
-    public void registerBlockIcons(IIconRegister par1IconRegister)
-    {
-        
-            this.field_111052_c = par1IconRegister.registerIcon(mod_Rediscovered.modid + ":" + texture);
-            this.tree_top = par1IconRegister.registerIcon(mod_Rediscovered.modid + ":" + texture + "_top");
-        
-    }
-    @Override
-	public boolean canSustainLeaves(IBlockAccess world, int x, int y, int z)
-	{
-		return true;
-	}
-
-	@Override
-	public boolean isWood(IBlockAccess world, int x, int y, int z)
-	{
-		return true;
-	}
 }

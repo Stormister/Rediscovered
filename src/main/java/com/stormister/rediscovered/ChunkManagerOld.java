@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.world.ChunkPosition;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeCache;
 import net.minecraft.world.biome.BiomeGenBase;
@@ -28,6 +28,7 @@ public class ChunkManagerOld extends WorldChunkManager
 	{
         this.biomeCache = new BiomeCache(this);
         this.biomesToSpawnIn = new ArrayList();
+        this.biomesToSpawnIn.addAll(allowedBiomes);
 	}
 
     public ChunkManagerOld(World par1World, boolean remote)
@@ -78,7 +79,6 @@ public class ChunkManagerOld extends WorldChunkManager
 
         return ad;
     }
-
     public static int[] getBiomesGens(int par1, int par2, int par3, int par4)
     {		
 		int[] abiomegenbase = new int[par3 * par4];
@@ -121,14 +121,14 @@ public class ChunkManagerOld extends WorldChunkManager
 		}
 		return abiomegenbase;
     }
-
+    
     public static int getBiomeFromLookup(double d, double d1)
     {
         int i = (int)(d * 63D);
         int j = (int)(d1 * 63D);
         return biomeLookupTable[i + j * 64];
     }
-
+    
     public void generateBiomeLookup()  
     {
     	
@@ -145,7 +145,7 @@ public class ChunkManagerOld extends WorldChunkManager
     {
 		return mod_Rediscovered.heaven.biomeID;
     }
-
+    
     public int getDefaultBiomes(float temp, float rain) 
     {
 		rain *= temp;
@@ -260,17 +260,17 @@ public class ChunkManagerOld extends WorldChunkManager
 			return BiomeGenBase.jungle.biomeID;
 		}
     }
-    
+    @Override
     public List getBiomesToSpawnIn()
     {
         return this.biomesToSpawnIn;
     }
-
-    public BiomeGenBase getBiomeGenAt(int par1, int par2)
+    @Override
+    public BiomeGenBase getBiomeGenerator(BlockPos pos, BiomeGenBase biomeGenBaseIn)
     {
-        return this.biomeCache.getBiomeGenAt(par1, par2);
+        return this.biomeCache.func_180284_a(pos.getX(), pos.getZ(), biomeGenBaseIn);
     }
-
+    @Override
     public float[] getRainfall(float[] par1ArrayOfFloat, int par2, int par3, int par4, int par5)
     {
         IntCache.resetIntCache();
@@ -296,7 +296,7 @@ public class ChunkManagerOld extends WorldChunkManager
 
         return par1ArrayOfFloat;
     }
-
+    @Override
     public float getTemperatureAtHeight(float par1, int par2)
     {
         return par1;
@@ -327,7 +327,7 @@ public class ChunkManagerOld extends WorldChunkManager
 
         return par1ArrayOfFloat;
     }*/
-
+    @Override
     public BiomeGenBase[] getBiomesForGeneration(BiomeGenBase[] par1ArrayOfBiomeGenBase, int par2, int par3, int par4, int par5)
     {
         IntCache.resetIntCache();
@@ -346,12 +346,12 @@ public class ChunkManagerOld extends WorldChunkManager
 
         return par1ArrayOfBiomeGenBase;
     }
-
+    @Override
     public BiomeGenBase[] loadBlockGeneratorData(BiomeGenBase[] par1ArrayOfBiomeGenBase, int par2, int par3, int par4, int par5)
     {
         return this.getBiomeGenAt(par1ArrayOfBiomeGenBase, par2, par3, par4, par5, true);
     }
-
+    @Override
     public BiomeGenBase[] getBiomeGenAt(BiomeGenBase[] par1ArrayOfBiomeGenBase, int par2, int par3, int par4, int par5, boolean par6)
     {
         IntCache.resetIntCache();
@@ -379,17 +379,18 @@ public class ChunkManagerOld extends WorldChunkManager
             return par1ArrayOfBiomeGenBase;
         }
     }
-
+    @Override
     public boolean areBiomesViable(int par1, int par2, int par3, List par4List)
     {
     	return false;
     }
-
-    public ChunkPosition findBiomePosition(int p_150795_1_, int p_150795_2_, int p_150795_3_, List p_150795_4_, Random p_150795_5_)
+    //TODO Maybe not keep
+    @Override
+    public BlockPos findBiomePosition(int x, int z, int range, List biomes, Random random)
     {
     	return null;
     }
-
+    @Override
     public void cleanupCache()
     {
         this.biomeCache.cleanupCache();

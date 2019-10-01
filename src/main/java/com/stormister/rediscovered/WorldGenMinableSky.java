@@ -2,78 +2,86 @@ package com.stormister.rediscovered;
 
 import java.util.Random;
 
+import com.google.common.base.Predicate;
+
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.state.pattern.BlockHelper;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.WorldGenerator;
 
 public class WorldGenMinableSky extends WorldGenerator
 {
-    /** The block ID of the ore to be placed using this generator. */
-    private int minableBlockId;
-    private int minableBlockMeta = 0;
+	private final IBlockState oreBlock;
+    private final int numberOfBlocks;
+    private final Predicate field_175919_c;
+    private static final String __OBFID = "CL_00000426";
 
-    /** The number of blocks to generate. */
-    private int numberOfBlocks;
-
-    public WorldGenMinableSky(int par1, int par2)
+    public WorldGenMinableSky(IBlockState p_i45630_1_, int p_i45630_2_)
     {
-        this.minableBlockId = par1;
-        this.numberOfBlocks = par2;
+        this(p_i45630_1_, p_i45630_2_, BlockHelper.forBlock(Blocks.stone));
     }
 
-    public WorldGenMinableSky(int id, int meta, int number)
+    public WorldGenMinableSky(IBlockState p_i45631_1_, int p_i45631_2_, Predicate p_i45631_3_)
     {
-        this(id, number);
-        minableBlockMeta = meta;
+        this.oreBlock = p_i45631_1_;
+        this.numberOfBlocks = p_i45631_2_;
+        this.field_175919_c = p_i45631_3_;
     }
 
-    public boolean generate(World par1World, Random par2Random, int par3, int par4, int par5)
+    public boolean generate(World worldIn, Random p_180709_2_, BlockPos p_180709_3_)
     {
-        float var6 = par2Random.nextFloat() * (float)Math.PI;
-        double var7 = (double)((float)(par3 + 8) + MathHelper.sin(var6) * (float)this.numberOfBlocks / 8.0F);
-        double var9 = (double)((float)(par3 + 8) - MathHelper.sin(var6) * (float)this.numberOfBlocks / 8.0F);
-        double var11 = (double)((float)(par5 + 8) + MathHelper.cos(var6) * (float)this.numberOfBlocks / 8.0F);
-        double var13 = (double)((float)(par5 + 8) - MathHelper.cos(var6) * (float)this.numberOfBlocks / 8.0F);
-        double var15 = (double)(par4 + par2Random.nextInt(3) - 2);
-        double var17 = (double)(par4 + par2Random.nextInt(3) - 2);
+        float f = p_180709_2_.nextFloat() * (float)Math.PI;
+        double d0 = (double)((float)(p_180709_3_.getX() + 8) + MathHelper.sin(f) * (float)this.numberOfBlocks / 8.0F);
+        double d1 = (double)((float)(p_180709_3_.getX() + 8) - MathHelper.sin(f) * (float)this.numberOfBlocks / 8.0F);
+        double d2 = (double)((float)(p_180709_3_.getZ() + 8) + MathHelper.cos(f) * (float)this.numberOfBlocks / 8.0F);
+        double d3 = (double)((float)(p_180709_3_.getZ() + 8) - MathHelper.cos(f) * (float)this.numberOfBlocks / 8.0F);
+        double d4 = (double)(p_180709_3_.getY() + p_180709_2_.nextInt(3) - 2);
+        double d5 = (double)(p_180709_3_.getY() + p_180709_2_.nextInt(3) - 2);
 
-        for (int var19 = 0; var19 <= this.numberOfBlocks; ++var19)
+        for (int i = 0; i < this.numberOfBlocks; ++i)
         {
-            double var20 = var7 + (var9 - var7) * (double)var19 / (double)this.numberOfBlocks;
-            double var22 = var15 + (var17 - var15) * (double)var19 / (double)this.numberOfBlocks;
-            double var24 = var11 + (var13 - var11) * (double)var19 / (double)this.numberOfBlocks;
-            double var26 = par2Random.nextDouble() * (double)this.numberOfBlocks / 16.0D;
-            double var28 = (double)(MathHelper.sin((float)var19 * (float)Math.PI / (float)this.numberOfBlocks) + 1.0F) * var26 + 1.0D;
-            double var30 = (double)(MathHelper.sin((float)var19 * (float)Math.PI / (float)this.numberOfBlocks) + 1.0F) * var26 + 1.0D;
-            int var32 = MathHelper.floor_double(var20 - var28 / 2.0D);
-            int var33 = MathHelper.floor_double(var22 - var30 / 2.0D);
-            int var34 = MathHelper.floor_double(var24 - var28 / 2.0D);
-            int var35 = MathHelper.floor_double(var20 + var28 / 2.0D);
-            int var36 = MathHelper.floor_double(var22 + var30 / 2.0D);
-            int var37 = MathHelper.floor_double(var24 + var28 / 2.0D);
+            float f1 = (float)i / (float)this.numberOfBlocks;
+            double d6 = d0 + (d1 - d0) * (double)f1;
+            double d7 = d4 + (d5 - d4) * (double)f1;
+            double d8 = d2 + (d3 - d2) * (double)f1;
+            double d9 = p_180709_2_.nextDouble() * (double)this.numberOfBlocks / 16.0D;
+            double d10 = (double)(MathHelper.sin((float)Math.PI * f1) + 1.0F) * d9 + 1.0D;
+            double d11 = (double)(MathHelper.sin((float)Math.PI * f1) + 1.0F) * d9 + 1.0D;
+            int j = MathHelper.floor_double(d6 - d10 / 2.0D);
+            int k = MathHelper.floor_double(d7 - d11 / 2.0D);
+            int l = MathHelper.floor_double(d8 - d10 / 2.0D);
+            int i1 = MathHelper.floor_double(d6 + d10 / 2.0D);
+            int j1 = MathHelper.floor_double(d7 + d11 / 2.0D);
+            int k1 = MathHelper.floor_double(d8 + d10 / 2.0D);
 
-            for (int var38 = var32; var38 <= var35; ++var38)
+            for (int l1 = j; l1 <= i1; ++l1)
             {
-                double var39 = ((double)var38 + 0.5D - var20) / (var28 / 2.0D);
+                double d12 = ((double)l1 + 0.5D - d6) / (d10 / 2.0D);
 
-                if (var39 * var39 < 1.0D)
+                if (d12 * d12 < 1.0D)
                 {
-                    for (int var41 = var33; var41 <= var36; ++var41)
+                    for (int i2 = k; i2 <= j1; ++i2)
                     {
-                        double var42 = ((double)var41 + 0.5D - var22) / (var30 / 2.0D);
+                        double d13 = ((double)i2 + 0.5D - d7) / (d11 / 2.0D);
 
-                        if (var39 * var39 + var42 * var42 < 1.0D)
+                        if (d12 * d12 + d13 * d13 < 1.0D)
                         {
-                            for (int var44 = var34; var44 <= var37; ++var44)
+                            for (int j2 = l; j2 <= k1; ++j2)
                             {
-                                double var45 = ((double)var44 + 0.5D - var24) / (var28 / 2.0D);
+                                double d14 = ((double)j2 + 0.5D - d8) / (d10 / 2.0D);
 
-                                Block block = par1World.getBlock(var38, var41, var44);
-                                if (var39 * var39 + var42 * var42 + var45 * var45 < 1.0D && (block != null && block.isReplaceableOreGen(par1World, var38, var41, var44, Blocks.air)))
+                                if (d12 * d12 + d13 * d13 + d14 * d14 < 1.0D)
                                 {
-                                    par1World.setBlockMetadataWithNotify(var38, var41, var44, this.minableBlockId, minableBlockMeta);
+                                    BlockPos blockpos1 = new BlockPos(l1, i2, j2);
+
+                                    if (worldIn.getBlockState(blockpos1).getBlock().isReplaceableOreGen(worldIn, blockpos1, this.field_175919_c))
+                                    {
+                                        worldIn.setBlockState(blockpos1, this.oreBlock, 2);
+                                    }
                                 }
                             }
                         }

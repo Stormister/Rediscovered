@@ -10,4 +10,5 @@ public interface IEntityMultiPartRed
 
     boolean attackEntityFromPart(EntityGoodDragonPart var1, DamageSource var2, float var3);
     boolean mount(EntityPlayer entity);
+    public boolean interactSpecial(EntityPlayer par1EntityPlayer);
 }

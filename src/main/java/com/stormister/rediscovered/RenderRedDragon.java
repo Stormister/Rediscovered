@@ -1,55 +1,59 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 import java.util.Random;
 
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.BossStatus;
+import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import org.lwjgl.opengl.GL11;
 
 @SideOnly(Side.CLIENT)
 public class RenderRedDragon extends RenderLiving
 {
-    private static final ResourceLocation field_110842_f = new ResourceLocation("textures/entity/enderdragon/dragon_exploding.png");
-    private static final ResourceLocation field_110843_g = new ResourceLocation("textures/entity/endercrystal/endercrystal_beam.png");
+    private static final ResourceLocation enderDragonExplodingTextures = new ResourceLocation("textures/entity/enderdragon/dragon_exploding.png");
+    private static final ResourceLocation enderDragonCrystalBeamTextures = new ResourceLocation("textures/entity/endercrystal/endercrystal_beam.png");
     private static final ResourceLocation field_110845_h = new ResourceLocation(mod_Rediscovered.modid + ":" + "textures/models/reddragon/red_eyes.png");
-    private static final ResourceLocation field_110844_k = new ResourceLocation(mod_Rediscovered.modid + ":" + "textures/models/reddragon/red.png");
+    private static final ResourceLocation enderDragonTextures = new ResourceLocation(mod_Rediscovered.modid + ":" + "textures/models/reddragon/red.png");
 
     /** An instance of the dragon model in RenderDragon */
     protected ModelRedDragon modelDragon;
 
-    public RenderRedDragon()
+    public RenderRedDragon(RenderManager p_i46183_1_)
     {
-        super(new ModelRedDragon(0.0F), 0.5F);
+        super(p_i46183_1_, new ModelRedDragon(0.0F), 0.5F);
         this.modelDragon = (ModelRedDragon)this.mainModel;
-        this.setRenderPassModel(this.mainModel);
+//        this.setRenderPassModel(this.mainModel);
     }
 
     /**
      * Used to rotate the dragon as a whole in RenderDragon. It's called in the rotateCorpse method.
      */
-    protected void rotateDragonBody(EntityGoodDragon par1EntityGoodDragon, float par2, float par3, float par4)
+    protected void func_180575_a(EntityGoodDragon p_180575_1_, float p_180575_2_, float p_180575_3_, float p_180575_4_)
     {
-        float f3 = (float)par1EntityGoodDragon.getMovementOffsets(7, par4)[0];
-        float f4 = (float)(par1EntityGoodDragon.getMovementOffsets(5, par4)[1] - par1EntityGoodDragon.getMovementOffsets(10, par4)[1]);
-        GL11.glRotatef(-f3, 0.0F, 1.0F, 0.0F);
-        GL11.glRotatef(f4 * 10.0F, 1.0F, 0.0F, 0.0F);
-        GL11.glTranslatef(0.0F, 0.0F, 1.0F);
+        float f3 = (float)p_180575_1_.getMovementOffsets(7, p_180575_4_)[0];
+        float f4 = (float)(p_180575_1_.getMovementOffsets(5, p_180575_4_)[1] - p_180575_1_.getMovementOffsets(10, p_180575_4_)[1]);
+        GlStateManager.rotate(-f3, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(f4 * 10.0F, 1.0F, 0.0F, 0.0F);
+        GlStateManager.translate(0.0F, 0.0F, 1.0F);
 
-        if (par1EntityGoodDragon.deathTime > 0)
+        if (p_180575_1_.deathTime > 0)
         {
-            float f5 = ((float)par1EntityGoodDragon.deathTime + par4 - 1.0F) / 20.0F * 1.6F;
+            float f5 = ((float)p_180575_1_.deathTime + p_180575_4_ - 1.0F) / 20.0F * 1.6F;
             f5 = MathHelper.sqrt_float(f5);
 
             if (f5 > 1.0F)
@@ -57,248 +61,125 @@ public class RenderRedDragon extends RenderLiving
                 f5 = 1.0F;
             }
 
-            GL11.glRotatef(f5 * this.getDeathMaxRotation(par1EntityGoodDragon), 0.0F, 0.0F, 1.0F);
+            GlStateManager.rotate(f5 * this.getDeathMaxRotation(p_180575_1_), 0.0F, 0.0F, 1.0F);
         }
     }
 
-    /**
-     * Renders the dragon model. Called by renderModel.
-     */
-    protected void renderDragonModel(EntityGoodDragon par1EntityGoodDragon, float par2, float par3, float par4, float par5, float par6, float par7)
+    protected void renderModel(EntityGoodDragon p_77036_1_, float p_77036_2_, float p_77036_3_, float p_77036_4_, float p_77036_5_, float p_77036_6_, float p_77036_7_)
     {
-        if (par1EntityGoodDragon.deathTicks > 0)
+        if (p_77036_1_.deathTicks > 0)
         {
-            float f6 = (float)par1EntityGoodDragon.deathTicks / 200.0F;
-            GL11.glDepthFunc(GL11.GL_LEQUAL);
-            GL11.glEnable(GL11.GL_ALPHA_TEST);
-            GL11.glAlphaFunc(GL11.GL_GREATER, f6);
-            this.bindTexture(field_110842_f);
-            this.mainModel.render(par1EntityGoodDragon, par2, par3, par4, par5, par6, par7);
-            GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
-            GL11.glDepthFunc(GL11.GL_EQUAL);
+            float f6 = (float)p_77036_1_.deathTicks / 200.0F;
+            GlStateManager.depthFunc(515);
+            GlStateManager.enableAlpha();
+            GlStateManager.alphaFunc(516, f6);
+            this.bindTexture(enderDragonExplodingTextures);
+            this.mainModel.render(p_77036_1_, p_77036_2_, p_77036_3_, p_77036_4_, p_77036_5_, p_77036_6_, p_77036_7_);
+            GlStateManager.alphaFunc(516, 0.1F);
+            GlStateManager.depthFunc(514);
         }
 
-        this.bindEntityTexture(par1EntityGoodDragon);
-        this.mainModel.render(par1EntityGoodDragon, par2, par3, par4, par5, par6, par7);
+        this.bindEntityTexture(p_77036_1_);
+        this.mainModel.render(p_77036_1_, p_77036_2_, p_77036_3_, p_77036_4_, p_77036_5_, p_77036_6_, p_77036_7_);
 
-        if (par1EntityGoodDragon.hurtTime > 0)
+        if (p_77036_1_.hurtTime > 0)
         {
-            GL11.glDepthFunc(GL11.GL_EQUAL);
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GL11.glColor4f(1.0F, 0.0F, 0.0F, 0.5F);
-            this.mainModel.render(par1EntityGoodDragon, par2, par3, par4, par5, par6, par7);
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
-            GL11.glDisable(GL11.GL_BLEND);
-            GL11.glDepthFunc(GL11.GL_LEQUAL);
+            GlStateManager.depthFunc(514);
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(770, 771);
+            GlStateManager.color(1.0F, 0.0F, 0.0F, 0.5F);
+            this.mainModel.render(p_77036_1_, p_77036_2_, p_77036_3_, p_77036_4_, p_77036_5_, p_77036_6_, p_77036_7_);
+            GlStateManager.enableTexture2D();
+            GlStateManager.disableBlend();
+            GlStateManager.depthFunc(515);
         }
     }
 
-    /**
-     * Renders the dragon, along with its dying animation
-     */
-    public void renderDragon(EntityGoodDragon par1EntityGoodDragon, double par2, double par4, double par6, float par8, float par9)
+    public void doRender(EntityGoodDragon entity, double x, double y, double z, float entityYaw, float partialTicks)
     {
-        super.doRender(par1EntityGoodDragon, par2, par4, par6, par8, par9);
+//        BossStatus.setBossStatus(entity, false);
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
 
-        if (par1EntityGoodDragon.healingEnderCrystal != null)
+        if (entity.healingEnderCrystal != null)
         {
-            float f2 = (float)par1EntityGoodDragon.healingEnderCrystal.innerRotation + par9;
-            float f3 = MathHelper.sin(f2 * 0.2F) / 2.0F + 0.5F;
-            f3 = (f3 * f3 + f3) * 0.2F;
-            float f4 = (float)(par1EntityGoodDragon.healingEnderCrystal.posX - par1EntityGoodDragon.posX - (par1EntityGoodDragon.prevPosX - par1EntityGoodDragon.posX) * (double)(1.0F - par9));
-            float f5 = (float)((double)f3 + par1EntityGoodDragon.healingEnderCrystal.posY - 1.0D - par1EntityGoodDragon.posY - (par1EntityGoodDragon.prevPosY - par1EntityGoodDragon.posY) * (double)(1.0F - par9));
-            float f6 = (float)(par1EntityGoodDragon.healingEnderCrystal.posZ - par1EntityGoodDragon.posZ - (par1EntityGoodDragon.prevPosZ - par1EntityGoodDragon.posZ) * (double)(1.0F - par9));
-            float f7 = MathHelper.sqrt_float(f4 * f4 + f6 * f6);
-            float f8 = MathHelper.sqrt_float(f4 * f4 + f5 * f5 + f6 * f6);
-            GL11.glPushMatrix();
-            GL11.glTranslatef((float)par2, (float)par4 + 2.0F, (float)par6);
-            GL11.glRotatef((float)(-Math.atan2((double)f6, (double)f4)) * 180.0F / (float)Math.PI - 90.0F, 0.0F, 1.0F, 0.0F);
-            GL11.glRotatef((float)(-Math.atan2((double)f7, (double)f5)) * 180.0F / (float)Math.PI - 90.0F, 1.0F, 0.0F, 0.0F);
-            Tessellator tessellator = Tessellator.instance;
-            RenderHelper.disableStandardItemLighting();
-            GL11.glDisable(GL11.GL_CULL_FACE);
-            this.bindTexture(field_110843_g);
-            GL11.glShadeModel(GL11.GL_SMOOTH);
-            float f9 = 0.0F - ((float)par1EntityGoodDragon.ticksExisted + par9) * 0.01F;
-            float f10 = MathHelper.sqrt_float(f4 * f4 + f5 * f5 + f6 * f6) / 32.0F - ((float)par1EntityGoodDragon.ticksExisted + par9) * 0.01F;
-            tessellator.startDrawing(5);
-            byte b0 = 8;
-
-            for (int i = 0; i <= b0; ++i)
-            {
-                float f11 = MathHelper.sin((float)(i % b0) * (float)Math.PI * 2.0F / (float)b0) * 0.75F;
-                float f12 = MathHelper.cos((float)(i % b0) * (float)Math.PI * 2.0F / (float)b0) * 0.75F;
-                float f13 = (float)(i % b0) * 1.0F / (float)b0;
-                tessellator.setColorOpaque_I(0);
-                tessellator.addVertexWithUV((double)(f11 * 0.2F), (double)(f12 * 0.2F), 0.0D, (double)f13, (double)f10);
-                tessellator.setColorOpaque_I(16777215);
-                tessellator.addVertexWithUV((double)f11, (double)f12, (double)f8, (double)f13, (double)f9);
-            }
-
-            tessellator.draw();
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            GL11.glShadeModel(GL11.GL_FLAT);
-            RenderHelper.enableStandardItemLighting();
-            GL11.glPopMatrix();
+            this.drawRechargeRay(entity, x, y, z, partialTicks);
         }
     }
 
-    /**
-     * Renders the animation for when an enderdragon dies
-     */
-    protected void renderDragonDying(EntityGoodDragon par1EntityGoodDragon, float par2)
+    protected void drawRechargeRay(EntityGoodDragon dragon, double p_180574_2_, double p_180574_4_, double p_180574_6_, float p_180574_8_)
     {
-        super.renderEquippedItems(par1EntityGoodDragon, par2);
-        Tessellator tessellator = Tessellator.instance;
+        float f = (float)dragon.healingEnderCrystal.innerRotation + p_180574_8_;
+        float f1 = MathHelper.sin(f * 0.2F) / 2.0F + 0.5F;
+        f1 = (f1 * f1 + f1) * 0.2F;
+        float f2 = (float)(dragon.healingEnderCrystal.posX - dragon.posX - (dragon.prevPosX - dragon.posX) * (double)(1.0F - p_180574_8_));
+        float f3 = (float)((double)f1 + dragon.healingEnderCrystal.posY - 1.0D - dragon.posY - (dragon.prevPosY - dragon.posY) * (double)(1.0F - p_180574_8_));
+        float f4 = (float)(dragon.healingEnderCrystal.posZ - dragon.posZ - (dragon.prevPosZ - dragon.posZ) * (double)(1.0F - p_180574_8_));
+        float f5 = MathHelper.sqrt_float(f2 * f2 + f4 * f4);
+        float f6 = MathHelper.sqrt_float(f2 * f2 + f3 * f3 + f4 * f4);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float)p_180574_2_, (float)p_180574_4_ + 2.0F, (float)p_180574_6_);
+        GlStateManager.rotate((float)(-Math.atan2((double)f4, (double)f2)) * 180.0F / (float)Math.PI - 90.0F, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate((float)(-Math.atan2((double)f5, (double)f3)) * 180.0F / (float)Math.PI - 90.0F, 1.0F, 0.0F, 0.0F);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.disableCull();
+        this.bindTexture(enderDragonCrystalBeamTextures);
+        GlStateManager.shadeModel(7425);
+        float f7 = 0.0F - ((float)dragon.ticksExisted + p_180574_8_) * 0.01F;
+        float f8 = MathHelper.sqrt_float(f2 * f2 + f3 * f3 + f4 * f4) / 32.0F - ((float)dragon.ticksExisted + p_180574_8_) * 0.01F;
+        worldrenderer.func_181668_a(5, DefaultVertexFormats.field_181709_i);
+        int i = 8;
 
-        if (par1EntityGoodDragon.deathTicks > 0)
+        for (int j = 0; j <= 8; ++j)
         {
-            RenderHelper.disableStandardItemLighting();
-            float f1 = ((float)par1EntityGoodDragon.deathTicks + par2) / 200.0F;
-            float f2 = 0.0F;
-
-            if (f1 > 0.8F)
-            {
-                f2 = (f1 - 0.8F) / 0.2F;
-            }
-
-            Random random = new Random(432L);
-            GL11.glDisable(GL11.GL_TEXTURE_2D);
-            GL11.glShadeModel(GL11.GL_SMOOTH);
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-            GL11.glDisable(GL11.GL_ALPHA_TEST);
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            GL11.glDepthMask(false);
-            GL11.glPushMatrix();
-            GL11.glTranslatef(0.0F, -1.0F, -2.0F);
-
-            for (int i = 0; (float)i < (f1 + f1 * f1) / 2.0F * 60.0F; ++i)
-            {
-                GL11.glRotatef(random.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(random.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
-                GL11.glRotatef(random.nextFloat() * 360.0F, 0.0F, 0.0F, 1.0F);
-                GL11.glRotatef(random.nextFloat() * 360.0F, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(random.nextFloat() * 360.0F, 0.0F, 1.0F, 0.0F);
-                GL11.glRotatef(random.nextFloat() * 360.0F + f1 * 90.0F, 0.0F, 0.0F, 1.0F);
-                tessellator.startDrawing(6);
-                float f3 = random.nextFloat() * 20.0F + 5.0F + f2 * 10.0F;
-                float f4 = random.nextFloat() * 2.0F + 1.0F + f2 * 2.0F;
-                tessellator.setColorRGBA_I(16777215, (int)(255.0F * (1.0F - f2)));
-                tessellator.addVertex(0.0D, 0.0D, 0.0D);
-                tessellator.setColorRGBA_I(16711935, 0);
-                tessellator.addVertex(-0.866D * (double)f4, (double)f3, (double)(-0.5F * f4));
-                tessellator.addVertex(0.866D * (double)f4, (double)f3, (double)(-0.5F * f4));
-                tessellator.addVertex(0.0D, (double)f3, (double)(1.0F * f4));
-                tessellator.addVertex(-0.866D * (double)f4, (double)f3, (double)(-0.5F * f4));
-                tessellator.draw();
-            }
-
-            GL11.glPopMatrix();
-            GL11.glDepthMask(true);
-            GL11.glDisable(GL11.GL_CULL_FACE);
-            GL11.glDisable(GL11.GL_BLEND);
-            GL11.glShadeModel(GL11.GL_FLAT);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            GL11.glEnable(GL11.GL_TEXTURE_2D);
-            GL11.glEnable(GL11.GL_ALPHA_TEST);
-            RenderHelper.enableStandardItemLighting();
-        }
-    }
-
-    /**
-     * Renders the overlay for glowing eyes and the mouth. Called by shouldRenderPass.
-     */
-    protected int renderGlow(EntityGoodDragon par1EntityGoodDragon, int par2, float par3)
-    {
-        if (par2 == 1)
-        {
-            GL11.glDepthFunc(GL11.GL_LEQUAL);
+            float f9 = MathHelper.sin((float)(j % 8) * (float)Math.PI * 2.0F / 8.0F) * 0.75F;
+            float f10 = MathHelper.cos((float)(j % 8) * (float)Math.PI * 2.0F / 8.0F) * 0.75F;
+            float f11 = (float)(j % 8) * 1.0F / 8.0F;
+            worldrenderer.func_181662_b((double)(f9 * 0.2F), (double)(f10 * 0.2F), 0.0D).func_181673_a((double)f11, (double)f8).func_181669_b(0, 0, 0, 255).func_181675_d();
+            worldrenderer.func_181662_b((double)f9, (double)f10, (double)f6).func_181673_a((double)f11, (double)f7).func_181669_b(255, 255, 255, 255).func_181675_d();
         }
 
-        if (par2 != 0)
-        {
-            return -1;
-        }
-        else
-        {
-            this.bindTexture(field_110845_h);
-            float f1 = 1.0F;
-            GL11.glEnable(GL11.GL_BLEND);
-            GL11.glDisable(GL11.GL_ALPHA_TEST);
-            GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
-            GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glDepthFunc(GL11.GL_EQUAL);
-            char c0 = 61680;
-            int j = c0 % 65536;
-            int k = c0 / 65536;
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)j / 1.0F, (float)k / 1.0F);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-            GL11.glEnable(GL11.GL_LIGHTING);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, f1);
-            return 1;
-        }
+        tessellator.draw();
+        GlStateManager.enableCull();
+        GlStateManager.shadeModel(7424);
+        RenderHelper.enableStandardItemLighting();
+        GlStateManager.popMatrix();
     }
 
-    public void doRender(EntityLiving par1EntityLiving, double par2, double par4, double par6, float par8, float par9)
+    protected ResourceLocation getEntityTexture(EntityGoodDragon entity)
     {
-        this.renderDragon((EntityGoodDragon)par1EntityLiving, par2, par4, par6, par8, par9);
+        return enderDragonTextures;
     }
 
-    /**
-     * Queries whether should render the specified pass or not.
-     */
-    protected int shouldRenderPass(EntityLivingBase par1EntityLivingBase, int par2, float par3)
+    public void doRender(EntityLiving entity, double x, double y, double z, float p_76986_8_, float partialTicks)
     {
-        return this.renderGlow((EntityGoodDragon)par1EntityLivingBase, par2, par3);
+        this.doRender((EntityGoodDragon)entity, x, y, z, p_76986_8_, partialTicks);
     }
 
-    protected void renderEquippedItems(EntityLivingBase par1EntityLivingBase, float par2)
+    protected void rotateCorpse(EntityLivingBase p_77043_1_, float p_77043_2_, float p_77043_3_, float p_77043_4_)
     {
-        this.renderDragonDying((EntityGoodDragon)par1EntityLivingBase, par2);
+        this.func_180575_a((EntityGoodDragon)p_77043_1_, p_77043_2_, p_77043_3_, p_77043_4_);
     }
 
-    protected void rotateCorpse(EntityLivingBase par1EntityLivingBase, float par2, float par3, float par4)
+    protected void renderModel(EntityLivingBase p_77036_1_, float p_77036_2_, float p_77036_3_, float p_77036_4_, float p_77036_5_, float p_77036_6_, float p_77036_7_)
     {
-        this.rotateDragonBody((EntityGoodDragon)par1EntityLivingBase, par2, par3, par4);
+        this.renderModel((EntityGoodDragon)p_77036_1_, p_77036_2_, p_77036_3_, p_77036_4_, p_77036_5_, p_77036_6_, p_77036_7_);
     }
 
-    /**
-     * Renders the model in RenderLiving
-     */
-    protected void renderModel(EntityLivingBase par1EntityLivingBase, float par2, float par3, float par4, float par5, float par6, float par7)
+    public void doRender(EntityLivingBase entity, double x, double y, double z, float p_76986_8_, float partialTicks)
     {
-        this.renderDragonModel((EntityGoodDragon)par1EntityLivingBase, par2, par3, par4, par5, par6, par7);
+        this.doRender((EntityGoodDragon)entity, x, y, z, p_76986_8_, partialTicks);
     }
 
-    public void renderPlayer(EntityLivingBase par1EntityLivingBase, double par2, double par4, double par6, float par8, float par9)
+    protected ResourceLocation getEntityTexture(Entity entity)
     {
-        this.renderDragon((EntityGoodDragon)par1EntityLivingBase, par2, par4, par6, par8, par9);
+        return this.getEntityTexture((EntityGoodDragon)entity);
     }
 
-    protected ResourceLocation getSquidTextures(EntityGoodDragon par1EntitySquid)
+    public void doRender(Entity entity, double x, double y, double z, float p_76986_8_, float partialTicks)
     {
-        return field_110844_k;
-    }
-    
-    /**
-     * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
-     */
-    protected ResourceLocation getEntityTexture(Entity par1Entity)
-    {
-        return this.getSquidTextures((EntityGoodDragon)par1Entity);
-    }
-
-    /**
-     * Actually renders the given argument. This is a synthetic bridge method, always casting down its argument and then
-     * handing it off to a worker function which does the actual work. In all probabilty, the class Render is generic
-     * (Render<T extends Entity) and this method has signature public void doRender(T entity, double d, double d1,
-     * double d2, float f, float f1). But JAD is pre 1.5 so doesn't do that.
-     */
-    public void doRender(Entity par1Entity, double par2, double par4, double par6, float par8, float par9)
-    {
-        this.renderDragon((EntityGoodDragon)par1Entity, par2, par4, par6, par8, par9);
+        this.doRender((EntityGoodDragon)entity, x, y, z, p_76986_8_, partialTicks);
     }
 }

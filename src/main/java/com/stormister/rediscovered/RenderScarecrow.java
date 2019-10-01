@@ -1,24 +1,23 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.passive.EntityChicken;
-import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class RenderScarecrow extends RenderLiving
 {
     private static final ResourceLocation field_110920_a = new ResourceLocation(mod_Rediscovered.modid + ":" + "textures/models/Scarecrow.png");
 
-    public RenderScarecrow(ModelBase par1ModelBase, float par2)
+    public RenderScarecrow(RenderManager p_i46173_1_, ModelBase par1ModelBase, float par2)
     {
-        super(par1ModelBase, par2);
+        super(p_i46173_1_, par1ModelBase, par2);
     }
 
     public void renderChicken(EntityScarecrow par1EntityScarecrow, double par2, double par4, double par6, float par8, float par9)

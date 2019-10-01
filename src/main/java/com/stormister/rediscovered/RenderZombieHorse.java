@@ -2,6 +2,7 @@ package com.stormister.rediscovered;
 
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.ResourceLocation;
@@ -12,9 +13,9 @@ public class RenderZombieHorse extends RenderLiving
 {
 	private static final ResourceLocation field_110871_a = new ResourceLocation("textures/entity/horse/horse_zombie.png");
 		
-        public RenderZombieHorse(ModelBase par1ModelBase, float par2)
+        public RenderZombieHorse(RenderManager p_i46170_1_, ModelBase par1ModelBase, float par2)
         {
-                super(par1ModelBase, par2);
+                super(p_i46170_1_, par1ModelBase, par2);
         }
 
         public void renderMyExample(EntityZombieHorse par1EntityExampleH, double par2, double par4, double par6, float par8, float par9)

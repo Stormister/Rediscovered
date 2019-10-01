@@ -25,16 +25,37 @@ public class RenderTileEntityLecternOpen extends TileEntitySpecialRenderer
 	public void renderAModelAt(TileEntityLecternOpen tile, double d, double d1, double d2, float f) 
 	{
 	
-		int rotation = 0;
+		int j = 0;
 		if(tile != null && tile.hasWorldObj())
 		{
-		rotation = tile.getBlockMetadata();
+			j = tile.getBlockMetadata();
 		}
+		short short1 = 0;
+
+        if (j == 2)
+        {
+            short1 = 180;
+        }
+
+        if (j == 3)
+        {
+            short1 = 0;
+        }
+
+        if (j == 4)
+        {
+            short1 = 90;
+        }
+
+        if (j == 5)
+        {
+            short1 = -90;
+        }
 		this.bindTexture(field_110871_a);
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float)d + 0.5F, (float)d1 + 1.5F, (float)d2 + 0.5F);
 		GL11.glScalef(1.0F, -1F, -1F);
-		GL11.glRotatef(rotation*90, 0.0F, 1.0F, 0.0F);
+		GL11.glRotatef((float)short1, 0.0F, 1.0F, 0.0F);
 
 		
 		model.renderAll();
@@ -44,7 +65,7 @@ public class RenderTileEntityLecternOpen extends TileEntitySpecialRenderer
 	
 	private ModelLecternOpen model;
 	
-	public void renderTileEntityAt(TileEntity par1TileEntity, double par2, double par4, double par6, float par8)
+	public void renderTileEntityAt(TileEntity par1TileEntity, double par2, double par4, double par6, float par8, int blah)
 	{
 		this.renderAModelAt((TileEntityLecternOpen)par1TileEntity, par2, par4, par6, par8);
 	}

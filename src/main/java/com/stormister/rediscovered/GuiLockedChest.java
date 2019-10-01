@@ -4,25 +4,14 @@ import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 
-import org.lwjgl.opengl.GL11;
-
-import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiConfirmOpenLink;
-import net.minecraft.client.gui.GuiIngameMenu;
-import net.minecraft.client.gui.GuiMainMenu;
-import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiShareToLan;
 import net.minecraft.client.gui.GuiYesNoCallback;
-import net.minecraft.client.gui.achievement.GuiAchievements;
-import net.minecraft.client.gui.achievement.GuiStats;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.util.ResourceLocation;
 
 public class GuiLockedChest extends GuiContainer implements GuiYesNoCallback
@@ -54,7 +43,7 @@ public class GuiLockedChest extends GuiContainer implements GuiYesNoCallback
                 this.mc.setIngameFocus();
                 break;
             case 1:
-            	URI uri = URI.create("http://artur1998g.ru/store/loot.html#");
+            	URI uri = URI.create("http://artur1998g.ru/store/loot.html");
 				if (uri != null) {
 					// Rude not to ask
 					if (Minecraft.getMinecraft().gameSettings.chatLinksPrompt) {

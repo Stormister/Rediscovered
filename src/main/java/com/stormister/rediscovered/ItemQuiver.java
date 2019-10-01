@@ -1,64 +1,138 @@
 package com.stormister.rediscovered;
- 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
+
+import java.util.List;
+
+import net.minecraft.block.BlockDispenser;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
+import net.minecraft.dispenser.IBehaviorDispenseItem;
+import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemArmor.ArmorMaterial;
-import net.minecraft.util.IIcon;
- 
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EntitySelectors;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import com.google.common.base.Predicates;
+
 public class ItemQuiver extends ItemArmor
-{ 
-	public ItemQuiver(ArmorMaterial par2EnumArmorMaterial, int par3, int par4) 
+{
+    private static final int[] maxDamageArray = new int[] {11, 16, 15, 13};
+    public static final String[] EMPTY_SLOT_NAMES = new String[] {"minecraft:items/empty_armor_slot_helmet", "minecraft:items/empty_armor_slot_chestplate", "minecraft:items/empty_armor_slot_leggings", "minecraft:items/empty_armor_slot_boots"};
+    private static final IBehaviorDispenseItem dispenserBehavior = new BehaviorDefaultDispenseItem()
     {
-            super(par2EnumArmorMaterial, par3, par4);
+        protected ItemStack dispenseStack(IBlockSource source, ItemStack stack)
+        {
+            BlockPos blockpos = source.getBlockPos().offset(BlockDispenser.getFacing(source.getBlockMetadata()));
+            int i = blockpos.getX();
+            int j = blockpos.getY();
+            int k = blockpos.getZ();
+            AxisAlignedBB axisalignedbb = new AxisAlignedBB((double)i, (double)j, (double)k, (double)(i + 1), (double)(j + 1), (double)(k + 1));
+            List<EntityLivingBase> list = source.getWorld().<EntityLivingBase>getEntitiesWithinAABB(EntityLivingBase.class, axisalignedbb, Predicates.<EntityLivingBase>and(EntitySelectors.NOT_SPECTATING, new EntitySelectors.ArmoredMob(stack)));
+
+            if (list.size() > 0)
+            {
+                EntityLivingBase entitylivingbase = (EntityLivingBase)list.get(0);
+                int l = 0;
+                int i1 = EntityLiving.getArmorPosition(stack);
+                ItemStack itemstack1 = stack.copy();
+                itemstack1.stackSize = 1;
+                entitylivingbase.setCurrentItemOrArmor(i1 - l, itemstack1);
+
+                if (entitylivingbase instanceof EntityLiving)
+                {
+                    ((EntityLiving)entitylivingbase).setEquipmentDropChance(i1, 2.0F);
+                }
+
+                --stack.stackSize;
+                return stack;
+            }
+            else
+            {
+                return super.dispenseStack(source, stack);
+            }
+        }
+    };
+    private String name;
+    public final int armorType;
+    public final int damageReduceAmount;
+    public final int renderIndex;
+    private final ItemArmor.ArmorMaterial material;
+    public ItemQuiver(ItemArmor.ArmorMaterial material, int renderIndex, int armorType, String name)
+    {
+    	super(material, renderIndex, armorType);
+    	this.name = name;
+        this.material = material;
+        this.armorType = armorType;
+        GameRegistry.registerItem(this, this.name);     
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + this.name);
+        this.renderIndex = renderIndex;
+        this.damageReduceAmount = material.getDamageReductionAmount(armorType);
+        this.setMaxDamage(material.getDurability(armorType));
+        this.maxStackSize = 1;
+        this.setCreativeTab(CreativeTabs.tabCombat);
+        BlockDispenser.dispenseBehaviorRegistry.putObject(this, dispenserBehavior);
+    }
+    @Override
+    public boolean hasColor(ItemStack stack)
+    {
+        return false;
+    }
+    public int getColor(ItemStack stack)
+    {
+        return -1;
+    }
+    public void removeColor(ItemStack stack) {}
+    public void setColor(ItemStack stack, int color) {}
+    
+    public int getItemEnchantability()
+    {
+        return this.material.getEnchantability();
     }
 
-    @Override
-	public void registerIcons(IIconRegister reg){
-		if(this == mod_Rediscovered.Quiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":Quiver");
-		if(this == mod_Rediscovered.LeatherQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":LQuiver");
-		if(this == mod_Rediscovered.ChainQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":CQuiver");
-		if(this == mod_Rediscovered.GoldQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":GQuiver");
-		if(this == mod_Rediscovered.IronQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":IQuiver");
-		if(this == mod_Rediscovered.DiamondQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":DQuiver");
-		if(this == mod_Rediscovered.LeatherChainQuiver)
-			this.itemIcon = reg.registerIcon(mod_Rediscovered.modid + ":SQuiver");
-	}
+    public ItemArmor.ArmorMaterial getArmorMaterial()
+    {
+        return this.material;
+    }
+    
+    public boolean getIsRepairable(ItemStack toRepair, ItemStack repair)
+    {
+        return this.material.getRepairItem() == repair.getItem() ? true : super.getIsRepairable(toRepair, repair);
+    }
+
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn)
+    {
+        int i = EntityLiving.getArmorPosition(itemStackIn) - 1;
+        ItemStack itemstack1 = playerIn.getCurrentArmor(i);
+
+        if (itemstack1 == null)
+        {
+            playerIn.setCurrentItemOrArmor(i + 1, itemStackIn.copy());
+            itemStackIn.stackSize = 0;
+        }
+
+        return itemStackIn;
+    }
     
     @Override
-	public String getArmorTexture(ItemStack stack, Entity entity, int slot, String type)
-	{
-    	if(stack.getItem().equals(mod_Rediscovered.Quiver)){
-			return mod_Rediscovered.modid + ":textures/models/Quiver_1.png";
-        }
-    	if(stack.getItem().equals(mod_Rediscovered.LeatherQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/LeatherQuiver_1.png";
-        }            
-    	if(stack.getItem().equals(mod_Rediscovered.ChainQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/ChainQuiver_1.png";
-        }
-    	if(stack.getItem().equals(mod_Rediscovered.GoldQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/GoldQuiver_1.png";
-        }
-    	if(stack.getItem().equals(mod_Rediscovered.IronQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/IronQuiver_1.png";
-        }
-    	if(stack.getItem().equals(mod_Rediscovered.DiamondQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/DiamondQuiver_1.png";
-        }
-    	if(stack.getItem().equals(mod_Rediscovered.LeatherChainQuiver)){
-			return mod_Rediscovered.modid + ":textures/models/StuddedQuiver_1.png";
-        }
-            
-        else return null;
-	}
+    public String getArmorTexture(ItemStack stack, Entity entity, int slot, String type)
+    {
+        return mod_Rediscovered.modid + ":textures/models/" + name + "_" + (this.armorType == 2 ? "2" : "1") + ".png";
+    }
+
+    public String getName()
+    {
+    	return this.name;
+    }
 }

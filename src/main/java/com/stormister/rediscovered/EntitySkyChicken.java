@@ -1,39 +1,29 @@
 package com.stormister.rediscovered;
 
-import java.util.List;
-
-import org.lwjgl.input.Keyboard;
-
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIControlledByPlayer;
 import net.minecraft.entity.ai.EntityAIFollowParent;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIMate;
-import net.minecraft.entity.ai.EntityAIPanic;
 import net.minecraft.entity.ai.EntityAISwimming;
 import net.minecraft.entity.ai.EntityAITempt;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
-import net.minecraft.entity.item.EntityBoat;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemSeeds;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class EntitySkyChicken extends EntityAnimal
+import org.lwjgl.input.Keyboard;
+
+public class EntitySkyChicken extends EntityCreature
 {
     public float field_70886_e;
     public float destPos;
@@ -71,10 +61,10 @@ public class EntitySkyChicken extends EntityAnimal
         togglekey = "SPACE";
         itogglekey = Keyboard.getKeyIndex(togglekey);
         this.tasks.addTask(0, new EntityAISwimming(this));
-        this.tasks.addTask(2, new EntityAIMate(this, 1.0D));
+//        this.tasks.addTask(2, new EntityAIMate(this, 1.0D));
         this.tasks.addTask(3, this.aiControlledByPlayer = new EntityAIControlledByPlayer(this, 1.0F));
         this.tasks.addTask(4, new EntityAITempt(this, 1.2D, Items.wheat_seeds, false));
-        this.tasks.addTask(5, new EntityAIFollowParent(this, 1.1D));
+//        this.tasks.addTask(5, new EntityAIFollowParent(this, 1.1D));
         this.tasks.addTask(6, new EntityAIWander(this, 1.0D));
         this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 6.0F));
         this.tasks.addTask(8, new EntityAILookIdle(this));
@@ -171,7 +161,8 @@ public class EntitySkyChicken extends EntityAnimal
     /**
      * Called when the mob is falling. Calculates and applies fall damage.
      */
-    protected void fall(float par1) {}
+    @Override
+    public void fall(float distance, float damageMultiplier) {}
 
     /**
      * Returns the sound this mob makes while it's alive.
@@ -287,8 +278,8 @@ public class EntitySkyChicken extends EntityAnimal
         return this.aiControlledByPlayer;
     }
 
-    public EntityAgeable createChild(EntityAgeable par1EntityAgeable)
-    {
-        return this.spawnBabyAnimal(par1EntityAgeable);
-    }
+//    public EntityAgeable createChild(EntityAgeable par1EntityAgeable)
+//    {
+//        return this.spawnBabyAnimal(par1EntityAgeable);
+//    }
 }

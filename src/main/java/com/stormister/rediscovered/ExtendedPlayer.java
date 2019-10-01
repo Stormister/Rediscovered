@@ -3,7 +3,7 @@ package com.stormister.rediscovered;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IExtendedEntityProperties;
 
@@ -79,9 +79,9 @@ public class ExtendedPlayer implements IExtendedEntityProperties
 		System.out.println("[REDISCOVERED]Respawn coords from NBT: " + this.respawnX + "/" + this.respawnY + "/" + this.respawnZ);
 	}
 	
-	public ChunkCoordinates getRespawn()
+	public BlockPos getRespawn()
 	{
-		ChunkCoordinates coordinates = new ChunkCoordinates(respawnX, respawnY, respawnZ);
+		BlockPos coordinates = new BlockPos(respawnX, respawnY, respawnZ);
 		return coordinates;
 	}
 }

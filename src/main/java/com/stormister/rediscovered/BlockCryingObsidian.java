@@ -2,44 +2,29 @@ package com.stormister.rediscovered;
 
 import java.util.Random;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 
 public class BlockCryingObsidian extends Block
 {
+	private final String name = "CryingObsidian";
 	public BlockCryingObsidian()
     {
         super(Material.rock);
         this.setHarvestLevel("pickaxe", 3);
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
     }
-    
-//    /**
-//     * Called when the block is placed in the world.
-//     */
-//    public void onBlockPlacedBy(World par1World, int par2, int par3, int par4, EntityLiving par5EntityLiving)
-//    {
-//    	BlockEntity.createEntity(par1World, par2, par3, par4, 0.5F);
-//    }
-
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random random)
+    public String getName()
     {
-        return 1;
-    }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public Block idDropped(int i, Random random, int j)
-    {
-        return mod_Rediscovered.CryingObsidian;
+    	return name;
     }
 }

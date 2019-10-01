@@ -1,18 +1,13 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
-import java.util.Calendar;
-import java.util.UUID;
-
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
+import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
-import net.minecraft.entity.ai.EntityAIBreakDoor;
 import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
@@ -22,21 +17,22 @@ import net.minecraft.entity.ai.EntityAISwimming;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
-import net.minecraft.entity.ai.attributes.RangedAttribute;
 import net.minecraft.entity.monster.EntityMob;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityHorse;
-import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
+import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class EntitySkeletonHorse extends EntityMob
 {
@@ -63,10 +59,15 @@ public class EntitySkeletonHorse extends EntityMob
         this.tasks.addTask(7, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
         this.tasks.addTask(7, new EntityAILookIdle(this));
         this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityHorse.class, 0, false));
+        this.applyEntityAI();
     }
 
+    protected void applyEntityAI()
+    {
+        this.targetTasks.addTask(1, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
+        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityHorse.class, false));
+    }
+    
     protected void applyEntityAttributes()
     {
         super.applyEntityAttributes();
@@ -145,7 +146,7 @@ public class EntitySkeletonHorse extends EntityMob
     {
         super.onUpdate();
 
-        if (this.worldObj.isRemote && this.dataWatcher.hasChanges())
+        if (this.worldObj.isRemote && this.dataWatcher.hasObjectChanged())
         {
             this.dataWatcher.func_111144_e();
         }
@@ -237,8 +238,9 @@ public class EntitySkeletonHorse extends EntityMob
         if (this.worldObj.isDaytime() && !this.worldObj.isRemote && !this.isChild())
         {
             float f = this.getBrightness(1.0F);
+            BlockPos blockpos = new BlockPos(this.posX, (double)Math.round(this.posY), this.posZ);
 
-            if (f > 0.5F && this.rand.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.worldObj.canBlockSeeTheSky(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY), MathHelper.floor_double(this.posZ)))
+            if (f > 0.5F && this.rand.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.worldObj.canSeeSky(blockpos))
             {
                 boolean flag = true;
                 ItemStack itemstack = this.getEquipmentInSlot(4);
@@ -247,9 +249,9 @@ public class EntitySkeletonHorse extends EntityMob
                 {
                     if (itemstack.isItemStackDamageable())
                     {
-                        itemstack.setItemDamage(itemstack.getItemDamageForDisplay() + this.rand.nextInt(2));
+                        itemstack.setItemDamage(itemstack.getItemDamage() + this.rand.nextInt(2));
 
-                        if (itemstack.getItemDamageForDisplay() >= itemstack.getMaxDamage())
+                        if (itemstack.getItemDamage() >= itemstack.getMaxDamage())
                         {
                             this.renderBrokenItemStack(itemstack);
                             this.setCurrentItemOrArmor(4, (ItemStack)null);
@@ -265,44 +267,46 @@ public class EntitySkeletonHorse extends EntityMob
                 }
             }
         }
-
         super.onLivingUpdate();
     }
 
     /**
      * Called when the entity is attacked.
      */
-    public boolean attackEntityFrom(DamageSource par1DamageSource, float par2)
+    public boolean attackEntityFrom(DamageSource source, float amount)
     {
-        if (!super.attackEntityFrom(par1DamageSource, par2))
-        {
-            return false;
-        }
-        else
+        if (super.attackEntityFrom(source, amount))
         {
             EntityLivingBase entitylivingbase = this.getAttackTarget();
 
-            if (entitylivingbase == null && this.getEntityToAttack() instanceof EntityLivingBase)
+            if (entitylivingbase == null && source.getEntity() instanceof EntityLivingBase)
             {
-                entitylivingbase = (EntityLivingBase)this.getEntityToAttack();
+                entitylivingbase = (EntityLivingBase)source.getEntity();
             }
 
-            if (entitylivingbase == null && par1DamageSource.getEntity() instanceof EntityLivingBase)
-            {
-                entitylivingbase = (EntityLivingBase)par1DamageSource.getEntity();
-            }
-
+            int i = MathHelper.floor_double(this.posX);
+            int j = MathHelper.floor_double(this.posY);
+            int k = MathHelper.floor_double(this.posZ);
             return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
-    public boolean attackEntityAsMob(Entity par1Entity)
+    public boolean attackEntityAsMob(Entity p_70652_1_)
     {
-        boolean flag = super.attackEntityAsMob(par1Entity);
+        boolean flag = super.attackEntityAsMob(p_70652_1_);
 
-        if (flag && this.getHeldItem() == null && this.isBurning() && this.rand.nextFloat() < (float)2 * 0.3F)
+        if (flag)
         {
-            par1Entity.setFire(2 * 2);
+            int i = this.worldObj.getDifficulty().getDifficultyId();
+
+            if (this.getHeldItem() == null && this.isBurning() && this.rand.nextFloat() < (float)i * 0.3F)
+            {
+                p_70652_1_.setFire(2 * i);
+            }
         }
 
         return flag;
@@ -336,25 +340,24 @@ public class EntitySkeletonHorse extends EntityMob
     /**
      * Plays step sound at given x, y, z for the entity
      */
-    protected void playStepSound(int par1, int par2, int par3, Block par4)
+    protected void playStepSound(BlockPos p_180429_1_, Block p_180429_2_)
     {
-        Block.SoundType stepsound = par4.stepSound;
+        Block.SoundType soundtype = p_180429_2_.stepSound;
 
-        if (this.worldObj.getBlock(par1, par2 + 1, par3) == Blocks.snow)
+        if (this.worldObj.getBlockState(p_180429_1_.up()).getBlock() == Blocks.snow_layer)
         {
-            stepsound = Blocks.snow.stepSound;
+            soundtype = Blocks.snow_layer.stepSound;
         }
 
-        if (!par4.getMaterial().isLiquid())
+        if (!p_180429_2_.getMaterial().isLiquid())
         {
-            
-            if (stepsound == Block.soundTypeWood)
+            if (soundtype == Block.soundTypeWood)
             {
-                this.playSound("mob.horse.soft", stepsound.getVolume() * 0.15F, stepsound.getPitch());
+                this.playSound("mob.horse.wood", soundtype.getVolume() * 0.15F, soundtype.getFrequency());
             }
             else
             {
-                this.playSound("mob.horse.wood", stepsound.getVolume() * 0.15F, stepsound.getPitch());
+                this.playSound("mob.horse.soft", soundtype.getVolume() * 0.15F, soundtype.getFrequency());
             }
         }
     }
@@ -362,14 +365,14 @@ public class EntitySkeletonHorse extends EntityMob
     /**
      * Called when the mob is falling. Calculates and applies fall damage.
      */
-    protected void fall(float par1)
+    public void fall(float distance, float damageMultiplier)
     {
-        if (par1 > 1.0F)
+        if (distance > 1.0F)
         {
             this.playSound("mob.horse.land", 0.4F, 1.0F);
         }
 
-        int i = MathHelper.ceiling_float_int(par1 * 0.5F - 3.0F);
+        int i = MathHelper.ceiling_float_int((distance * 0.5F - 3.0F) * damageMultiplier);
 
         if (i > 0)
         {
@@ -380,12 +383,12 @@ public class EntitySkeletonHorse extends EntityMob
                 this.riddenByEntity.attackEntityFrom(DamageSource.fall, (float)i);
             }
 
-            Block j = this.worldObj.getBlock(MathHelper.floor_double(this.posX), MathHelper.floor_double(this.posY - 0.2D - (double)this.prevRotationYaw), MathHelper.floor_double(this.posZ));
+            Block block = this.worldObj.getBlockState(new BlockPos(this.posX, this.posY - 0.2D - (double)this.prevRotationYaw, this.posZ)).getBlock();
 
-            if (!j.equals(Blocks.air))
+            if (block.getMaterial() != Material.air && !this.isSilent())
             {
-            	Block.SoundType stepsound = j.stepSound;
-                this.worldObj.playSoundAtEntity(this, stepsound.getBreakSound(), stepsound.getVolume() * 0.5F, stepsound.getPitch() * 0.75F);
+                Block.SoundType soundtype = block.stepSound;
+                this.worldObj.playSoundAtEntity(this, soundtype.getStepSound(), soundtype.getVolume() * 0.5F, soundtype.getFrequency() * 0.75F);
             }
         }
     }
@@ -458,7 +461,7 @@ public class EntitySkeletonHorse extends EntityMob
             this.worldObj.removeEntity(par1EntityLivingBase);
 
             this.worldObj.spawnEntityInWorld(entityzombie);
-            this.worldObj.playAuxSFXAtEntity((EntityPlayer)null, 1016, (int)this.posX, (int)this.posY, (int)this.posZ, 0);
+            this.worldObj.playAuxSFXAtEntity((EntityPlayer)null, 1016, new BlockPos((int)this.posX, (int)this.posY, (int)this.posZ), 0);
         }
     }
 

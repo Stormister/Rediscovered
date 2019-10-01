@@ -1,9 +1,11 @@
 package com.stormister.rediscovered;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 /*ITOS:
@@ -20,7 +22,7 @@ public class EntityMountableBlock extends Entity
 	protected int orgBlockPosX;
 	protected int orgBlockPosY;
 	protected int orgBlockPosZ;
-	protected Block orgBlockID;
+	protected IBlockState orgBlockID;
 	protected float blahx, blahy, blahz;
 	
 	public EntityMountableBlock (World world)
@@ -54,7 +56,7 @@ public class EntityMountableBlock extends Entity
     	orgBlockPosX = i;
     	orgBlockPosY = j;
     	orgBlockPosZ = k;
-    	orgBlockID = world.getBlock(i, j, k);
+    	orgBlockID = world.getBlockState(new BlockPos(i, j, k));
     	
     	blahx = mountingX;
     	blahy = mountingY;

@@ -2,54 +2,26 @@ package com.stormister.rediscovered;
 
 import java.util.Random;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockStairs;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.world.World;
+import net.minecraft.block.state.IBlockState;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 
 public class BlockCherryStairs extends BlockStairs
 {
-	String texture;
+	private final String name = "CherryStairs";
 	
-	public BlockCherryStairs(Block par2Block, int par3)
+	public BlockCherryStairs(IBlockState state)
 	{
-		super(par2Block, par3);
+		super(state);
+		GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
 		setLightOpacity(0);
 	}
-    
-//    /**
-//     * Called when the block is placed in the world.
-//     */
-//    public void onBlockPlacedBy(World par1World, int par2, int par3, int par4, EntityLiving par5EntityLiving)
-//    {
-//    	BlockEntity.createEntity(par1World, par2, par3, par4, 0.5F);
-//    }
-
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random random)
+	
+	public String getName()
     {
-        return 1;
+    	return name;
     }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public Block idDropped(int i, Random random, int j)
-    {
-        return mod_Rediscovered.CherryStairs;
-    }
-    
-//    @Override
-//    @SideOnly(Side.CLIENT)
-//    public void registerBlockIcons(IIconRegister iconRegister) 
-//    {
-//    	this.blockIcon = iconRegister.registerIcon(mod_Rediscovered.modid + ":" + texture);
-//    }
 }

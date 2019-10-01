@@ -3,24 +3,21 @@ package com.stormister.rediscovered;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemSlab;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
-public class ItemBlockDirtSlab extends ItemSlab
-{
-	public ItemBlockDirtSlab(Block block, BlockDirtSlab singleSlab, BlockDirtSlab doubleSlab) 
-	{
-		super(block, singleSlab, doubleSlab, block == doubleSlab);
-	}
-
-	@Override
-	public int getMetadata(int meta)
-	{
-		return meta & 7;
-	}
-
-	@Override
-	public String getUnlocalizedName(ItemStack itemStack) 
-	{
-		BlockDirtSlab slab = (BlockDirtSlab)Block.getBlockFromItem(itemStack.getItem());
-		return super.getUnlocalizedName() + "." + (new StringBuilder()).append(slab.func_150002_b(itemStack.getItemDamage())).toString();
-	}
+public class ItemBlockDirtSlab extends ItemSlab {
+    /**
+     * Initializes a new instance of the ItemBlockStainedBrickSlab class.
+     * @param block the block behind the item.
+     * @param slab the half height slab.
+     * @param doubleSlab the full height slab.
+     * @param stacked whether or not the block is the stacked version.
+     */
+    public ItemBlockDirtSlab(
+        final Block block,
+        final BlockDirtHalfSlab slab,
+        final BlockDirtDoubleSlab doubleSlab,
+        final Boolean stacked) {
+        super(block, slab, doubleSlab);
+    }
 }

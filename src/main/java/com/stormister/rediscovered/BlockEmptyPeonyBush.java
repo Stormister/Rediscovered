@@ -1,72 +1,97 @@
 package com.stormister.rediscovered;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-
 import java.util.List;
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockDoublePlant;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumWorldBlockLayer;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BlockEmptyPeonyBush extends BlockBush
 {
     private static final String[][] field_149860_M = new String[][] {{"peony"}};
     public static final String[] field_149859_a = new String[] {"peony"};
     public static final String[] field_149858_b = new String[] {"peony"};
-    @SideOnly(Side.CLIENT)
-    private IIcon[] field_149861_N;
     private int field_149862_O;
-    private static final String __OBFID = "CL_00000246";
+    private final String name = "EmptyPeonyBush";
 
     protected BlockEmptyPeonyBush(int par1)
     {
         super(Material.plants);
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
         this.field_149862_O = par1;
+    }
+    
+    /**
+     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
+     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
+     */
+    @Override
+    public boolean isOpaqueCube()
+    {
+        return false;
+    }
+    
+    public boolean isFullCube()
+    {
+        return false;
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public EnumWorldBlockLayer getBlockLayer()
+    {
+        return EnumWorldBlockLayer.CUTOUT_MIPPED;
     }
 
     /**
-     * Gets the block's texture. Args: side, meta
+     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
      */
-    @SideOnly(Side.CLIENT)
-    public IIcon getIcon(int p_149691_1_, int p_149691_2_)
+    @Override
+    public boolean isNormalCube()
     {
-        if (p_149691_2_ >= this.field_149861_N.length)
-        {
-            p_149691_2_ = 0;
-        }
-
-        return this.field_149861_N[p_149691_2_];
+        return false;
     }
     
-    public void onBlockPlacedBy(World p_149689_1_, int p_149689_2_, int p_149689_3_, int p_149689_4_, EntityLivingBase p_149689_5_, ItemStack p_149689_6_)
+    @Override
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
     {
-    	p_149689_1_.setBlock(p_149689_2_, p_149689_3_+1, p_149689_4_, mod_Rediscovered.EmptyPeonyBushTop);
+    	worldIn.setBlockState(pos.up(), mod_Rediscovered.EmptyPeonyBushTop.getDefaultState());
+    	return mod_Rediscovered.EmptyPeonyBush.getDefaultState();
     }
     
     /**
      * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
      */
-    public boolean canPlaceBlockAt(World p_149742_1_, int p_149742_2_, int p_149742_3_, int p_149742_4_)
+    @Override
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
     {
-        return super.canPlaceBlockAt(p_149742_1_, p_149742_2_, p_149742_3_, p_149742_4_) && this.canBlockStay(p_149742_1_, p_149742_2_, p_149742_3_, p_149742_4_);
+        return super.canPlaceBlockAt(worldIn, pos) && this.canBlockStay(worldIn, pos, worldIn.getBlockState(pos));
     }
 
     /**
      * is the block grass, dirt or farmland
      */
+    @Override
     protected boolean canPlaceBlockOn(Block p_149854_1_)
     {
         return p_149854_1_ == Blocks.grass || p_149854_1_ == Blocks.dirt || p_149854_1_ == Blocks.farmland;
@@ -76,53 +101,45 @@ public class BlockEmptyPeonyBush extends BlockBush
      * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
      * their own) Args: x, y, z, neighbor Block
      */
-    public void onNeighborBlockChange(World p_149695_1_, int p_149695_2_, int p_149695_3_, int p_149695_4_, Block p_149695_5_)
+    @Override
+    public void onNeighborBlockChange(World world, BlockPos pos, IBlockState state, Block neighborBlock)
     {
-        super.onNeighborBlockChange(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_, p_149695_5_);
-        this.checkAndDropBlock(p_149695_1_, p_149695_2_, p_149695_3_, p_149695_4_);
+        super.onNeighborBlockChange(world, pos, state, neighborBlock);
+        this.checkAndDropBlock(world, pos, state);
     }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void updateTick(World p_149674_1_, int p_149674_2_, int p_149674_3_, int p_149674_4_, Random p_149674_5_)
+    
+    public void updateTick(World world, BlockPos pos, IBlockState state, Random rand)
     {
-        this.checkAndDropBlock(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
-        if (p_149674_1_.getBlockLightValue(p_149674_2_, p_149674_3_ + 1, p_149674_4_) >= 9)
-        {
-        	float f = this.func_149864_n(p_149674_1_, p_149674_2_, p_149674_3_, p_149674_4_);
+    	this.checkAndDropBlock(world, pos, state);
 
-            if (p_149674_5_.nextInt((int)(25.0F / f) + 1) == 0)
+        if (world.getLightFromNeighbors(pos.up()) >= 9)
+        {
+            float f = getGrowthChance(this, world, pos);
+
+            if (rand.nextInt((int)(25.0F / f) + 1) == 0)
             {
-            	p_149674_1_.setBlock(p_149674_2_, p_149674_3_+1, p_149674_4_, Blocks.air);
-            	p_149674_1_.setBlock(p_149674_2_, p_149674_3_, p_149674_4_, Blocks.double_plant, 5, 2);
-            	p_149674_1_.setBlock(p_149674_2_, p_149674_3_+1, p_149674_4_, Blocks.double_plant, 11, 2);
+            	world.setBlockToAir(pos.up());
+            	Blocks.double_plant.placeAt(world, pos, BlockDoublePlant.EnumPlantType.PAEONIA, 2);
             }
         }
     }
     
-    private float func_149864_n(World p_149864_1_, int p_149864_2_, int p_149864_3_, int p_149864_4_)
+    protected static float getGrowthChance(Block blockIn, World worldIn, BlockPos pos)
     {
         float f = 1.0F;
-        Block block = p_149864_1_.getBlock(p_149864_2_, p_149864_3_, p_149864_4_ - 1);
-        Block block1 = p_149864_1_.getBlock(p_149864_2_, p_149864_3_, p_149864_4_ + 1);
-        Block block2 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_);
-        Block block3 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_);
-        Block block4 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_ - 1);
-        Block block5 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_ - 1);
-        Block block6 = p_149864_1_.getBlock(p_149864_2_ + 1, p_149864_3_, p_149864_4_ + 1);
-        Block block7 = p_149864_1_.getBlock(p_149864_2_ - 1, p_149864_3_, p_149864_4_ + 1);
-        boolean flag = block2 == this || block3 == this;
-        boolean flag1 = block == this || block1 == this;
-        boolean flag2 = block4 == this || block5 == this || block6 == this || block7 == this;
+        BlockPos blockpos1 = pos.down();
 
-        for (int l = p_149864_2_ - 1; l <= p_149864_2_ + 1; ++l)
+        for (int i = -1; i <= 1; ++i)
         {
-            for (int i1 = p_149864_4_ - 1; i1 <= p_149864_4_ + 1; ++i1)
+            for (int j = -1; j <= 1; ++j)
             {
-                float f1 = 1.0F;
+                float f1 = 0.0F;
+                IBlockState iblockstate = worldIn.getBlockState(blockpos1.add(i, 0, j));
 
-                if (l != p_149864_2_ || i1 != p_149864_4_)
+                f1 = 3.0F;
+
+                if (i != 0 || j != 0)
                 {
                     f1 /= 4.0F;
                 }
@@ -131,23 +148,45 @@ public class BlockEmptyPeonyBush extends BlockBush
             }
         }
 
+        BlockPos blockpos2 = pos.north();
+        BlockPos blockpos3 = pos.south();
+        BlockPos blockpos4 = pos.west();
+        BlockPos blockpos5 = pos.east();
+        boolean flag = blockIn == worldIn.getBlockState(blockpos4).getBlock() || blockIn == worldIn.getBlockState(blockpos5).getBlock();
+        boolean flag1 = blockIn == worldIn.getBlockState(blockpos2).getBlock() || blockIn == worldIn.getBlockState(blockpos3).getBlock();
+
+        if (flag && flag1)
+        {
+            f /= 2.0F;
+        }
+        else
+        {
+            boolean flag2 = blockIn == worldIn.getBlockState(blockpos4.north()).getBlock() || blockIn == worldIn.getBlockState(blockpos5.north()).getBlock() || blockIn == worldIn.getBlockState(blockpos5.south()).getBlock() || blockIn == worldIn.getBlockState(blockpos4.south()).getBlock();
+
+            if (flag2)
+            {
+                f /= 2.0F;
+            }
+        }
+
         return f;
     }
+    
     /**
      * checks if the block can stay, if not drop as item
      */
-    protected void checkAndDropBlock(World p_149855_1_, int p_149855_2_, int p_149855_3_, int p_149855_4_)
+    protected void checkAndDropBlock(World world, BlockPos pos, IBlockState state)
     {
-        if (!this.canBlockStay(p_149855_1_, p_149855_2_, p_149855_3_, p_149855_4_))
+        if (!this.canBlockStay(world, pos, state))
         {
-            p_149855_1_.setBlock(p_149855_2_, p_149855_3_, p_149855_4_, getBlockById(0), 0, 2);
+        	world.setBlockToAir(pos);
         }
     }
     
     @Override
-    public void breakBlock(World p_149749_1_, int p_149749_2_, int p_149749_3_, int p_149749_4_, Block p_149749_5_, int p_149749_6_)
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
     {
-    	p_149749_1_.setBlock(p_149749_2_, p_149749_3_+1, p_149749_4_, getBlockById(0), 0, 2);
+    	worldIn.setBlockToAir(pos.up());
     }
     
     @SideOnly(Side.CLIENT)
@@ -156,7 +195,7 @@ public class BlockEmptyPeonyBush extends BlockBush
      * only called by clickMiddleMouseButton , and passed to inventory.setCurrentItem (along with isCreative)
      */
     @Override
-    public ItemStack getPickBlock(MovingObjectPosition target, World world, int x, int y, int z)
+    public ItemStack getPickBlock(MovingObjectPosition target, World world, BlockPos pos)
     {
         return new ItemStack(mod_Rediscovered.EmptyPeonyBush);
     }
@@ -164,20 +203,9 @@ public class BlockEmptyPeonyBush extends BlockBush
     /**
      * Updates the blocks bounds based on its current state. Args: world, x, y, z
      */
-    public void setBlockBoundsBasedOnState(IBlockAccess p_149719_1_, int p_149719_2_, int p_149719_3_, int p_149719_4_)
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, BlockPos pos)
     {
         this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void registerBlockIcons(IIconRegister p_149651_1_)
-    {
-        this.field_149861_N = new IIcon[field_149860_M[this.field_149862_O].length];
-
-        for (int i = 0; i < this.field_149861_N.length; ++i)
-        {
-        		this.field_149861_N[i] = p_149651_1_.registerIcon(mod_Rediscovered.modid + ":" + "empty_peony_bottom");
-        }
     }
 
     /**
@@ -187,17 +215,19 @@ public class BlockEmptyPeonyBush extends BlockBush
     {
         return p_149692_1_;
     }
+    
+    public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
+    {
+        return null;
+    }
 
     /**
      * returns a list of blocks with the same ID, but different meta (eg: wood returns 4 blocks)
      */
     @SideOnly(Side.CLIENT)
-    public void getSubBlocks(Item p_149666_1_, CreativeTabs p_149666_2_, List p_149666_3_)
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, List list)
     {
-        for (int i = 0; i < this.field_149861_N.length; ++i)
-        {
-            p_149666_3_.add(new ItemStack(p_149666_1_, 1, i));
-        }
+        list.add(new ItemStack(itemIn, 1));
     }
 
     public static BlockFlower func_149857_e(String p_149857_0_)
@@ -254,5 +284,10 @@ public class BlockEmptyPeonyBush extends BlockBush
         }
 
         return 0;
+    }
+    
+    public String getName()
+    {
+    	return name;
     }
 }

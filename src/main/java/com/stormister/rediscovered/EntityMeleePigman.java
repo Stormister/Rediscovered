@@ -1,5 +1,7 @@
 package com.stormister.rediscovered;
 
+import com.google.common.base.Predicate;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
@@ -7,24 +9,27 @@ import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
-import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
 import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
+import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
 import net.minecraft.entity.ai.EntityAIOpenDoor;
 import net.minecraft.entity.ai.EntityAIRestrictOpenDoor;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest2;
-import net.minecraft.entity.monster.EntityGolem;
+import net.minecraft.entity.item.EntityTNTPrimed;
+import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.village.Village;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.World;
 
 
@@ -36,6 +41,7 @@ public class EntityMeleePigman extends EntityMob
     private int field_48118_d;
     public int type;
     public float animSpeed;
+    private int randomTickDivider;
     private static final ItemStack defaultHeldItem = new ItemStack(Items.iron_sword, 1);
     private EntityAIAttackOnCollide aiAttackOnCollide = new EntityAIAttackOnCollide(this, EntityPlayer.class, 1.2D, false);
 
@@ -45,13 +51,13 @@ public class EntityMeleePigman extends EntityMob
         field_48119_b = 0;
         villageObj = null;
         type = rand.nextInt(3);
-        //animSpeed = (float)(Math.random() * 0.89999997615814209D + 0.10000000149011612D);
         animSpeed = (float)(0.89999997615814209D);
-        getNavigator().setAvoidsWater(true);
+        ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
         tasks.addTask(1, new EntityAIAttackOnCollide(this, 0.25F, true));
         tasks.addTask(2, new EntityAIMoveTowardsTarget(this, 0.22F, 32F));
-        tasks.addTask(3, new EntityAIAvoidEntity(this, net.minecraft.entity.item.EntityTNTPrimed.class, 8F, 0.3F, 0.35F));
-        tasks.addTask(4, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntityCreeper.class, 8F, 0.3F, 0.35F));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityTNTPrimed.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityCreeper.class, 8.0F, 0.6D, 0.6D));
+        tasks.addTask(3, new EntityAIAttackOnCollide(this, EntityPlayer.class, 1.0D, false));
         tasks.addTask(5, new EntityAIMoveThroughVillage(this, 0.16F, true));
         tasks.addTask(6, new EntityAIMoveTowardsRestriction(this, 0.16F));
         tasks.addTask(8, new EntityAIWander(this, 0.16F));
@@ -63,12 +69,16 @@ public class EntityMeleePigman extends EntityMob
         tasks.addTask(14, new EntityAIRestrictOpenDoor(this));
         tasks.addTask(15, new EntityAIOpenDoor(this, true));
         targetTasks.addTask(2, new EntityAIHurtByTarget(this, false));
-        targetTasks.addTask(3, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
-        
+        this.applyEntityAI();
         if (par1World != null && !par1World.isRemote)
         {
             this.setCombatTask();
         }
+    }
+    
+    protected void applyEntityAI()
+    {
+    	this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
     }
 
     protected void entityInit()
@@ -95,25 +105,27 @@ public class EntityMeleePigman extends EntityMob
     /**
      * main AI tick function, replaces updateEntityActionState
      */
-    protected void updateAITick()
+    protected void updateAITasks()
     {
-        if (--field_48119_b <= 0)
+        if (--this.randomTickDivider <= 0)
         {
-            field_48119_b = 70 + rand.nextInt(50);
-            villageObj = worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ), 32);
+            BlockPos blockpos = new BlockPos(this);
+            this.worldObj.getVillageCollection().addToVillagerPositionList(blockpos);
+            this.randomTickDivider = 70 + this.rand.nextInt(50);
+            this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(blockpos, 32);
 
-            if (villageObj == null)
+            if (this.villageObj == null)
             {
-            	detachHome();
+                this.detachHome();
             }
             else
             {
-                ChunkCoordinates chunkcoordinates = villageObj.getCenter();
-                this.setHomeArea(chunkcoordinates.posX, chunkcoordinates.posY, chunkcoordinates.posZ, villageObj.getVillageRadius());
+                BlockPos blockpos1 = this.villageObj.getCenter();
+                this.setHomePosAndDistance(blockpos1, (int)((float)this.villageObj.getVillageRadius() * 1.0F));
             }
         }
 
-        super.updateAITick();
+        super.updateAITasks();
     }
 
     /**
@@ -239,10 +251,10 @@ public class EntityMeleePigman extends EntityMob
     /**
      * Makes entity wear random armor based on difficulty
      */
-    protected void addRandomArmor()
+    protected void setEquipmentBasedOnDifficulty(DifficultyInstance difficulty)
     {
-        super.addRandomArmor();
-        this.setCurrentItemOrArmor(0, new ItemStack(Items.iron_sword));
+    	super.setEquipmentBasedOnDifficulty(difficulty);
+    	this.setCurrentItemOrArmor(0, new ItemStack(Items.iron_sword));
     }
     
     /**
@@ -259,14 +271,6 @@ public class EntityMeleePigman extends EntityMob
     }
     
     /**
-     * Return this skeleton's type.
-     */
-    public int getSkeletonType()
-    {
-        return 0;
-    }
-    
-    /**
      * Determines if an entity can be despawned, used on idle far away entities
      */
     protected boolean canDespawn()
@@ -280,13 +284,6 @@ public class EntityMeleePigman extends EntityMob
     public void readEntityFromNBT(NBTTagCompound par1NBTTagCompound)
     {
         super.readEntityFromNBT(par1NBTTagCompound);
-
-        if (par1NBTTagCompound.hasKey("SkeletonType"))
-        {
-            byte b0 = par1NBTTagCompound.getByte("SkeletonType");
-            this.addRandomArmor();
-        }
-
         this.setCombatTask();
     }
 
@@ -296,7 +293,6 @@ public class EntityMeleePigman extends EntityMob
     public void writeEntityToNBT(NBTTagCompound par1NBTTagCompound)
     {
         super.writeEntityToNBT(par1NBTTagCompound);
-        par1NBTTagCompound.setByte("SkeletonType", (byte)this.getSkeletonType());
     }
 
     public int func_48117_D_()

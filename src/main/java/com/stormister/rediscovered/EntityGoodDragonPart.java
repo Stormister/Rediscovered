@@ -1,9 +1,12 @@
 package com.stormister.rediscovered;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.DamageSource;
@@ -47,9 +50,9 @@ public class EntityGoodDragonPart extends Entity
     /**
      * Called when the entity is attacked.
      */
-    public boolean attackEntityFrom(DamageSource par1DamageSource, float par2)
+    public boolean attackEntityFrom(DamageSource source, float amount)
     {
-        return this.isEntityInvulnerable() ? false : this.entityDragonObj.attackEntityFromPart(this, par1DamageSource, par2);
+        return this.isEntityInvulnerable(source) ? false : this.entityDragonObj.attackEntityFromPart(this, source, amount);
     }
     
     /**
@@ -58,9 +61,7 @@ public class EntityGoodDragonPart extends Entity
     @Override
     public boolean interactFirst(EntityPlayer par1EntityPlayer)
     {
-//    	par1EntityPlayer.addChatComponentMessage(new ChatComponentTranslation("You right clicked me! Ah!", new Object[0]));
-    	entityDragonObj.mount(par1EntityPlayer);
-    	return true;
+    	return entityDragonObj.interactSpecial(par1EntityPlayer);
     }
 
     /**

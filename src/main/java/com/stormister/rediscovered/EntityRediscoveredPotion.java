@@ -3,8 +3,6 @@ package com.stormister.rediscovered;
 import java.util.Iterator;
 import java.util.List;
 
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
-import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.projectile.EntityThrowable;
@@ -14,10 +12,12 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class EntityRediscoveredPotion extends EntityThrowable implements IEntityAdditionalSpawnData
 {
@@ -52,7 +52,7 @@ public class EntityRediscoveredPotion extends EntityThrowable implements IEntity
         super(worldIn, p_i1790_2_);
         this.potionDamage = p_i1790_3_;
         randomTilt = rand.nextInt(360);
-        this.metadata = potionDamage.getItemDamage();
+        this.metadata = potionDamage.getMetadata();
         
         if(this.metadata == 100){
             potioneffect = new PotionEffect(9, 720, 0);
@@ -80,12 +80,12 @@ public class EntityRediscoveredPotion extends EntityThrowable implements IEntity
         return 0.05F;
     }
 
-    protected float func_70182_d()
+    protected float getVelocity()
     {
         return 0.5F;
     }
 
-    protected float func_70183_g()
+    protected float getInaccuracy()
     {
         return -20.0F;
     }
@@ -124,7 +124,7 @@ public class EntityRediscoveredPotion extends EntityThrowable implements IEntity
         if (!this.worldObj.isRemote)
         {
             
-        	AxisAlignedBB axisalignedbb = this.boundingBox.expand(4.0D, 2.0D, 4.0D);
+                AxisAlignedBB axisalignedbb = this.getEntityBoundingBox().expand(4.0D, 2.0D, 4.0D);
                 List list1 = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, axisalignedbb);
 
                 if (!list1.isEmpty())
@@ -156,7 +156,7 @@ public class EntityRediscoveredPotion extends EntityThrowable implements IEntity
                     }
                 }
             
-            this.worldObj.playAuxSFX(2002, (int)Math.round(this.posX), (int)Math.round(this.posY), (int)Math.round(this.posZ), color);
+            this.worldObj.playAuxSFX(2002, new BlockPos(this), color);
             this.setDead();
         }
     }

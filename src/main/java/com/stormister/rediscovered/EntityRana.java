@@ -1,7 +1,10 @@
 package com.stormister.rediscovered;
 
+import com.google.common.base.Predicate;
+
 import net.minecraft.block.Block;
-import net.minecraft.entity.EntityAgeable;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAvoidEntity;
@@ -13,14 +16,17 @@ import net.minecraft.entity.ai.EntityAISwimming;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.ai.EntityAIWatchClosest2;
+import net.minecraft.entity.item.EntityTNTPrimed;
+import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntityGolem;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.entity.monster.EntitySpider;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraft.util.DamageSource;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.village.Village;
 import net.minecraft.world.World;
@@ -48,13 +54,13 @@ public class EntityRana extends EntityGolem
         villageObj = null;
         setProfession(par2);
         dead = false;
-        getNavigator().setBreakDoors(true);
-        getNavigator().setAvoidsWater(true);
+        ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
         tasks.addTask(0, new EntityAISwimming(this));
-        tasks.addTask(1, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntityZombie.class, 8F, 0.3F, 0.35F));
-        tasks.addTask(2, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntitySkeleton.class, 8F, 0.3F, 0.35F));
-        tasks.addTask(3, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntitySpider.class, 8F, 0.3F, 0.35F));
-        tasks.addTask(4, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntityCreeper.class, 8F, 0.3F, 0.35F));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityZombie.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntitySkeleton.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntitySpider.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityTNTPrimed.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityCreeper.class, 8.0F, 0.6D, 0.6D));
         tasks.addTask(5, new EntityAIMoveIndoors(this));
         tasks.addTask(6, new EntityAIRestrictOpenDoor(this));
         tasks.addTask(7, new EntityAIOpenDoor(this, true));
@@ -84,26 +90,27 @@ public class EntityRana extends EntityGolem
     /**
      * main AI tick function, replaces updateEntityActionState
      */
-    protected void updateAITick()
+    protected void updateAITasks()
     {
-        if (--randomTickDivider <= 0)
+        if (--this.randomTickDivider <= 0)
         {
-            worldObj.villageCollectionObj.addVillagerPosition(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ));
-            randomTickDivider = 70 + rand.nextInt(50);
-            villageObj = worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ), 32);
+            BlockPos blockpos = new BlockPos(this);
+            this.worldObj.getVillageCollection().addToVillagerPositionList(blockpos);
+            this.randomTickDivider = 70 + this.rand.nextInt(50);
+            this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(blockpos, 32);
 
-            if (villageObj == null)
+            if (this.villageObj == null)
             {
-            	detachHome();
+                this.detachHome();
             }
             else
             {
-                ChunkCoordinates chunkcoordinates = villageObj.getCenter();
-                this.setHomeArea(chunkcoordinates.posX, chunkcoordinates.posY, chunkcoordinates.posZ, villageObj.getVillageRadius());
+                BlockPos blockpos1 = this.villageObj.getCenter();
+                this.setHomePosAndDistance(blockpos1, (int)((float)this.villageObj.getVillageRadius() * 1.0F));
             }
         }
 
-        super.updateAITick();
+        super.updateAITasks();
     }
 
     protected void applyEntityAttributes()
@@ -150,10 +157,10 @@ public class EntityRana extends EntityGolem
 
         if (motionX * motionX + motionZ * motionZ > 2.5000002779052011E-007D && rand.nextInt(5) == 0)
         {
-            int i = MathHelper.floor_double(posX);
-            int j = MathHelper.floor_double(posY - 0.20000000298023224D - (double)yOffset);
+        	int i = MathHelper.floor_double(posX);
+            int j = MathHelper.floor_double(posY - 0.20000000298023224D - (double)this.getYOffset());
             int k = MathHelper.floor_double(posZ);
-            Block l = worldObj.getBlock(i, j, k);
+            IBlockState l = worldObj.getBlockState(new BlockPos(i, j, k));
 
         }
     }

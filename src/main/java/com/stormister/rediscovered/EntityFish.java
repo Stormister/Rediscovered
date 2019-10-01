@@ -2,14 +2,15 @@ package com.stormister.rediscovered;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
-import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
+import net.minecraft.entity.ai.EntityAIBase;
+import net.minecraft.entity.passive.EntitySquid;
 import net.minecraft.entity.passive.EntityWaterMob;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 
 public class EntityFish extends EntityWaterMob
@@ -38,6 +39,7 @@ public class EntityFish extends EntityWaterMob
         super(par1World);
         this.setSize(0.5F, 0.5F);
         this.field_70864_bA = 1.0F / (this.rand.nextFloat() + 1.0F) * 0.2F;
+        this.tasks.addTask(0, new EntityFish.AIMoveRandom());
     }
     
     protected void applyEntityAttributes()
@@ -92,7 +94,7 @@ public class EntityFish extends EntityWaterMob
      */
     protected Item getDropItem()
     {
-        return this.isBurning() ? Items.cooked_fished : Items.fish;
+        return this.isBurning() ? Items.cooked_fish : Items.fish;
     }
     
     /**
@@ -114,7 +116,7 @@ public class EntityFish extends EntityWaterMob
      */
     public boolean isInWater()
     {
-    	return this.isWet();
+        return this.worldObj.handleMaterialAcceleration(this.getEntityBoundingBox().expand(0.0D, -0.6000000238418579D, 0.0D), Material.water, this);
     }
 
     /**
@@ -198,35 +200,61 @@ public class EntityFish extends EntityWaterMob
     /**
      * Moves the entity based on the specified heading.  Args: strafe, forward
      */
-    public void moveEntityWithHeading(float par1, float par2)
+    public void moveEntityWithHeading(float p_70612_1_, float p_70612_2_)
     {
         this.moveEntity(this.motionX, this.motionY, this.motionZ);
     }
 
-    protected void updateEntityActionState()
+    @SideOnly(Side.CLIENT)
+    public void handleHealthUpdate(byte p_70103_1_)
     {
-        ++this.entityAge;
+    	super.handleHealthUpdate(p_70103_1_);
+    }
 
-        if (this.entityAge > 100)
-        {
-            this.randomMotionVecX = this.randomMotionVecY = this.randomMotionVecZ = 0.0F;
-        }
-        else if (this.rand.nextInt(50) == 0 || !this.inWater || this.randomMotionVecX == 0.0F && this.randomMotionVecY == 0.0F && this.randomMotionVecZ == 0.0F)
-        {
-            float var1 = this.rand.nextFloat() * (float)Math.PI * 2.0F;
-            this.randomMotionVecX = MathHelper.cos(var1) * 0.2F;
-            this.randomMotionVecY = -0.1F + this.rand.nextFloat() * 0.2F;
-            this.randomMotionVecZ = MathHelper.sin(var1) * 0.2F;
-        }
+    public void func_175568_b(float p_175568_1_, float p_175568_2_, float p_175568_3_)
+    {
+        this.randomMotionVecX = p_175568_1_;
+        this.randomMotionVecY = p_175568_2_;
+        this.randomMotionVecZ = p_175568_3_;
+    }
 
-        this.despawnEntity();
+    public boolean func_175567_n()
+    {
+        return this.randomMotionVecX != 0.0F || this.randomMotionVecY != 0.0F || this.randomMotionVecZ != 0.0F;
     }
 
     /**
      * Checks if the entity's current position is a valid location to spawn this entity.
      */
-    public boolean getCanSpawnHere()
+//    public boolean getCanSpawnHere()
+//    {
+//        return this.posY > 45.0D && this.posY < 63.0D && super.getCanSpawnHere();
+//    }
+    class AIMoveRandom extends EntityAIBase
     {
-        return true;
+        private EntityFish field_179476_a = EntityFish.this;
+
+        public boolean shouldExecute()
+        {
+            return true;
+        }
+
+        public void updateTask()
+        {
+            int i = this.field_179476_a.getAge();
+
+            if (i > 100)
+            {
+                this.field_179476_a.func_175568_b(0.0F, 0.0F, 0.0F);
+            }
+            else if (this.field_179476_a.getRNG().nextInt(50) == 0 || !this.field_179476_a.inWater || !this.field_179476_a.func_175567_n())
+            {
+                float f = this.field_179476_a.getRNG().nextFloat() * (float)Math.PI * 2.0F;
+                float f1 = MathHelper.cos(f) * 0.2F;
+                float f2 = -0.1F + this.field_179476_a.getRNG().nextFloat() * 0.2F;
+                float f3 = MathHelper.sin(f) * 0.2F;
+                this.field_179476_a.func_175568_b(f1, f2, f3);
+            }
+        }
     }
 }

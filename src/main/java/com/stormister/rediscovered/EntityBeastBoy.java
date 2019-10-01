@@ -1,6 +1,10 @@
 package com.stormister.rediscovered;
 
+import com.google.common.base.Predicate;
+
 import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
@@ -8,21 +12,24 @@ import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
-import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
 import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
+import net.minecraft.entity.ai.EntityAIMoveTowardsTarget;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
 import net.minecraft.entity.ai.EntityAIOpenDoor;
 import net.minecraft.entity.ai.EntityAIRestrictOpenDoor;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest2;
-import net.minecraft.entity.monster.EntityGolem;
+import net.minecraft.entity.item.EntityTNTPrimed;
+import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntityMob;
+import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.entity.passive.EntityHorse;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.pathfinding.PathNavigateGround;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraft.village.Village;
@@ -37,6 +44,7 @@ public class EntityBeastBoy extends EntityMob
     private int field_48118_d;
     public int type;
     public float animSpeed;
+    private int randomTickDivider;
 
     public EntityBeastBoy(World par1World)
     {
@@ -46,11 +54,11 @@ public class EntityBeastBoy extends EntityMob
         type = rand.nextInt(3);
         //animSpeed = (float)(Math.random() * 0.89999997615814209D + 0.10000000149011612D);
         animSpeed = (float)(0.89999997615814209D);
-        getNavigator().setAvoidsWater(true);
+        ((PathNavigateGround)this.getNavigator()).setAvoidsWater(true);
         tasks.addTask(1, new EntityAIAttackOnCollide(this, 0.25F, true));
         tasks.addTask(2, new EntityAIMoveTowardsTarget(this, 0.22F, 32F));
-        tasks.addTask(3, new EntityAIAvoidEntity(this, net.minecraft.entity.item.EntityTNTPrimed.class, 8F, 0.3F, 0.35F));
-        tasks.addTask(4, new EntityAIAvoidEntity(this, net.minecraft.entity.monster.EntityCreeper.class, 8F, 0.3F, 0.35F));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityTNTPrimed.class, 8.0F, 0.6D, 0.6D));
+        this.tasks.addTask(1, new EntityAIAvoidEntity(this, EntityCreeper.class, 8.0F, 0.6D, 0.6D));
         tasks.addTask(5, new EntityAIMoveThroughVillage(this, 0.16F, true));
         tasks.addTask(6, new EntityAIMoveTowardsRestriction(this, 0.16F));
         tasks.addTask(8, new EntityAIWander(this, 0.16F));
@@ -63,7 +71,14 @@ public class EntityBeastBoy extends EntityMob
         tasks.addTask(15, new EntityAIOpenDoor(this, true));
         targetTasks.addTask(2, new EntityAIHurtByTarget(this, false));
         if(mod_Rediscovered.BeastBoyHostile)
-        	targetTasks.addTask(3, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
+        	this.tasks.addTask(2, new EntityAIAttackOnCollide(this, EntityPlayer.class, 1.0D, false));
+        this.applyEntityAI();
+    }
+    
+    protected void applyEntityAI()
+    {
+    	if(mod_Rediscovered.BeastBoyHostile)
+    		this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
     }
 
     protected void entityInit()
@@ -106,25 +121,27 @@ public class EntityBeastBoy extends EntityMob
     /**
      * main AI tick function, replaces updateEntityActionState
      */
-    protected void updateAITick()
+    protected void updateAITasks()
     {
-        if (--field_48119_b <= 0)
+        if (--this.randomTickDivider <= 0)
         {
-            field_48119_b = 70 + rand.nextInt(50);
-            villageObj = worldObj.villageCollectionObj.findNearestVillage(MathHelper.floor_double(posX), MathHelper.floor_double(posY), MathHelper.floor_double(posZ), 32);
+            BlockPos blockpos = new BlockPos(this);
+            this.worldObj.getVillageCollection().addToVillagerPositionList(blockpos);
+            this.randomTickDivider = 70 + this.rand.nextInt(50);
+            this.villageObj = this.worldObj.getVillageCollection().getNearestVillage(blockpos, 32);
 
-            if (villageObj == null)
+            if (this.villageObj == null)
             {
-            	detachHome();
+                this.detachHome();
             }
             else
             {
-                ChunkCoordinates chunkcoordinates = villageObj.getCenter();
-                this.setHomeArea(chunkcoordinates.posX, chunkcoordinates.posY, chunkcoordinates.posZ, villageObj.getVillageRadius());
+                BlockPos blockpos1 = this.villageObj.getCenter();
+                this.setHomePosAndDistance(blockpos1, (int)((float)this.villageObj.getVillageRadius() * 1.0F));
             }
         }
 
-        super.updateAITick();
+        super.updateAITasks();
     }
 
     /**
@@ -156,9 +173,9 @@ public class EntityBeastBoy extends EntityMob
         if (motionX * motionX + motionZ * motionZ > 2.5000002779052011E-007D && rand.nextInt(5) == 0)
         {
             int i = MathHelper.floor_double(posX);
-            int j = MathHelper.floor_double(posY - 0.20000000298023224D - (double)yOffset);
+            int j = MathHelper.floor_double(posY - 0.20000000298023224D - (double)this.getYOffset());
             int k = MathHelper.floor_double(posZ);
-            Block l = worldObj.getBlock(i, j, k);
+            IBlockState l = worldObj.getBlockState(new BlockPos(i, j, k));
 
         }
     }

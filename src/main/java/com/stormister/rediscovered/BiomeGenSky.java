@@ -21,18 +21,17 @@ public class BiomeGenSky extends BiomeGenBase
         this.spawnableCreatureList.clear();
         this.spawnableWaterCreatureList.clear();
         this.spawnableCaveCreatureList.clear();
-        this.spawnableCreatureList.add(new SpawnListEntry(EntityGiant.class, mod_Rediscovered.GiantSpawn, 2, 2));
-        this.spawnableCreatureList.add(new SpawnListEntry(EntityGoodDragon.class, mod_Rediscovered.RedDragonSpawn, 4, 4));
-        this.spawnableCreatureList.add(new SpawnListEntry(EntitySkyChicken.class, mod_Rediscovered.SkyChickenSpawn, 6, 6));
-        this.spawnableWaterCreatureList.add(new SpawnListEntry(EntityFish.class, mod_Rediscovered.FishSpawn, 5, 20));
+        this.spawnableCreatureList.add(new BiomeGenBase.SpawnListEntry(EntityGiant.class, mod_Rediscovered.GiantSpawn, 2, 2));
+        this.spawnableCreatureList.add(new BiomeGenBase.SpawnListEntry(EntityGoodDragon.class, mod_Rediscovered.RedDragonSpawn, 4, 4));
+        this.spawnableCreatureList.add(new BiomeGenBase.SpawnListEntry(EntitySkyChicken.class, mod_Rediscovered.SkyChickenSpawn, 6, 6));
     }
     
     /**
      * Gets a WorldGen appropriate for this biome.
      */
     @Override
-    public WorldGenAbstractTree func_150567_a(Random par1Random)
+    public WorldGenAbstractTree genBigTreeChance(Random par1Random)
     {
-        return (WorldGenAbstractTree)(par1Random.nextInt(2) == 0 ? new WorldGenCherryTrees(mod_Rediscovered.CherryLog, mod_Rediscovered.CherryLeaves, 0, 0) : (par1Random.nextInt(1) == 0 ? new WorldGenCherryTrees(mod_Rediscovered.CherryLog, mod_Rediscovered.CherryLeaves, 0, 0) : new WorldGenCherryTrees(mod_Rediscovered.CherryLog, mod_Rediscovered.CherryLeaves, 0, 0)));
+        return (WorldGenAbstractTree)(new WorldGenCherryTrees(true));
     }
 }

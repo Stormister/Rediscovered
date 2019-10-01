@@ -35,6 +35,7 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.stats.AchievementList;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProviderHell;
 
@@ -42,21 +43,17 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
 {
     private EntityAIArrowAttack aiArrowAttack = new EntityAIArrowAttack(this, 1.0D, 20, 60, 15.0F);
     private EntityAIAttackOnCollide aiAttackOnCollide = new EntityAIAttackOnCollide(this, EntityPlayer.class, 1.2D, false);
-    private static final String __OBFID = "CL_00001697";
 
     public EntityRangedPigman(World par1World)
     {
         super(par1World);
         this.tasks.addTask(1, new EntityAISwimming(this));
-        this.tasks.addTask(2, new EntityAIRestrictSun(this));
-        this.tasks.addTask(3, new EntityAIFleeSun(this, 1.0D));
         this.tasks.addTask(5, new EntityAIWander(this, 1.0D));
         this.tasks.addTask(6, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
         this.tasks.addTask(6, new EntityAILookIdle(this));
-        this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, false));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true));
-        this.targetTasks.addTask(3, new EntityAINearestAttackableTarget(this, EntityGoodDragon.class, 0, true));
-        this.targetTasks.addTask(3, new EntityAINearestAttackableTarget(this, EntityGoodDragonPart.class, 0, true));
+        this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, false, new Class[0]));
+        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
+        this.tasks.addTask(4, this.aiArrowAttack);
 
         if (par1World != null && !par1World.isRemote)
         {
@@ -73,7 +70,7 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
     protected void entityInit()
     {
         super.entityInit();
-        this.dataWatcher.addObject(15, new Byte((byte)0));
+        this.dataWatcher.addObject(21, new Byte((byte)0));
     }
 
     /**
@@ -113,37 +110,6 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
         this.playSound("mob.pig.step", 0.15F, 1.0F);
     }
 
-    public boolean attackEntityAsMob(Entity par1Entity)
-    {
-        if (super.attackEntityAsMob(par1Entity))
-        {
-            if (this.getSkeletonType() == 1 && par1Entity instanceof EntityLivingBase)
-            {
-                ((EntityLivingBase)par1Entity).addPotionEffect(new PotionEffect(Potion.wither.id, 200));
-            }
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /**
-     * Handles updating while being ridden by an entity
-     */
-    public void updateRidden()
-    {
-        super.updateRidden();
-
-        if (this.ridingEntity instanceof EntityCreature)
-        {
-            EntityCreature entitycreature = (EntityCreature)this.ridingEntity;
-            this.renderYawOffset = entitycreature.renderYawOffset;
-        }
-    }
-
     protected Item getDropItem()
     {
         return Items.arrow;
@@ -181,24 +147,42 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
     }
 
     /**
-     * Makes entity wear random armor based on difficulty
+     * Gives armor or weapon for entity based on given DifficultyInstance
      */
-    protected void addRandomArmor()
+    protected void setEquipmentBasedOnDifficulty(DifficultyInstance difficulty)
     {
-        super.addRandomArmor();
+        super.setEquipmentBasedOnDifficulty(difficulty);
         this.setCurrentItemOrArmor(0, new ItemStack(Items.bow));
     }
 
-    public IEntityLivingData onSpawnWithEgg(IEntityLivingData par1EntityLivingData)
+    /**
+     * Called only once on an entity when first time spawned, via egg, mob spawner, natural spawning etc, but not called
+     * when entity is reloaded from nbt. Mainly used for initializing attributes and inventory
+     */
+    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, IEntityLivingData livingdata)
     {
-        par1EntityLivingData = super.onSpawnWithEgg(par1EntityLivingData);
+        livingdata = super.onInitialSpawn(difficulty, livingdata);
 
-        	this.tasks.addTask(4, this.aiArrowAttack);
-            this.addRandomArmor();
-            this.setCurrentItemOrArmor(0, new ItemStack(Items.bow));
-            this.enchantEquipment();
+        
+            this.tasks.addTask(4, this.aiArrowAttack);
+            this.setEquipmentBasedOnDifficulty(difficulty);
+            this.setEnchantmentBasedOnDifficulty(difficulty);
+        
 
-        return par1EntityLivingData;
+        this.setCanPickUpLoot(this.rand.nextFloat() < 0.55F * difficulty.getClampedAdditionalDifficulty());
+
+        if (this.getEquipmentInSlot(4) == null)
+        {
+            Calendar calendar = this.worldObj.getCurrentDate();
+
+            if (calendar.get(2) + 1 == 10 && calendar.get(5) == 31 && this.rand.nextFloat() < 0.25F)
+            {
+                this.setCurrentItemOrArmor(4, new ItemStack(this.rand.nextFloat() < 0.1F ? Blocks.lit_pumpkin : Blocks.pumpkin));
+                this.equipmentDropChances[4] = 0.0F;
+            }
+        }
+
+        return livingdata;
     }
     
     /**
@@ -215,17 +199,7 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
     public void setCombatTask()
     {
         this.tasks.removeTask(this.aiAttackOnCollide);
-        this.tasks.removeTask(this.aiArrowAttack);
-        ItemStack itemstack = this.getHeldItem();
-
-        if (itemstack != null && itemstack.getItem() == Items.bow)
-        {
-            this.tasks.addTask(4, this.aiArrowAttack);
-        }
-        else
-        {
-            this.tasks.addTask(4, this.aiAttackOnCollide);
-        }
+        this.tasks.addTask(4, this.aiArrowAttack);
     }
 
     /**
@@ -233,10 +207,10 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
      */
     public void attackEntityWithRangedAttack(EntityLivingBase par1EntityLivingBase, float par2)
     {
-        EntityParrow entityarrow = new EntityParrow(this.worldObj, this, par1EntityLivingBase, 1.6F, (float)(14 - this.worldObj.difficultySetting.getDifficultyId() * 4));
+    	EntityParrow entityarrow = new EntityParrow(this.worldObj, this, par1EntityLivingBase, 1.6F, (float)(14 - this.worldObj.getDifficulty().getDifficultyId() * 4));
         int i = EnchantmentHelper.getEnchantmentLevel(Enchantment.power.effectId, this.getHeldItem());
         int j = EnchantmentHelper.getEnchantmentLevel(Enchantment.punch.effectId, this.getHeldItem());
-        entityarrow.setDamage((double)(par2 * 2.0F) + this.rand.nextGaussian() * 0.25D + (double)((float)this.worldObj.difficultySetting.getDifficultyId() * 0.11F));
+        entityarrow.setDamage((double)(par2 * 2.0F) + this.rand.nextGaussian() * 0.25D + (double)((float)this.worldObj.getDifficulty().getDifficultyId() * 0.11F));
 
         if (i > 0)
         {
@@ -248,7 +222,7 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
             entityarrow.setKnockbackStrength(j);
         }
 
-        if (EnchantmentHelper.getEnchantmentLevel(Enchantment.flame.effectId, this.getHeldItem()) > 0 || this.getSkeletonType() == 1)
+        if (EnchantmentHelper.getEnchantmentLevel(Enchantment.flame.effectId, this.getHeldItem()) > 0)
         {
             entityarrow.setFire(100);
         }
@@ -258,45 +232,11 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
     }
 
     /**
-     * Return this skeleton's type.
-     */
-    public int getSkeletonType()
-    {
-        return 0;
-    }
-
-    /**
-     * Set this skeleton's type.
-     */
-    public void setSkeletonType(int par1)
-    {
-        this.dataWatcher.updateObject(15, Byte.valueOf((byte)par1));
-        this.isImmuneToFire = par1 == 1;
-
-        if (par1 == 1)
-        {
-            this.setSize(0.72F, 2.34F);
-        }
-        else
-        {
-            this.setSize(0.6F, 1.8F);
-            this.setCurrentItemOrArmor(0, new ItemStack(Items.bow));
-        }
-    }
-
-    /**
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
     public void readEntityFromNBT(NBTTagCompound par1NBTTagCompound)
     {
         super.readEntityFromNBT(par1NBTTagCompound);
-
-        if (par1NBTTagCompound.hasKey("PigmanType", 99))
-        {
-            byte b0 = par1NBTTagCompound.getByte("PigmanType");
-            this.setSkeletonType(b0);
-            this.addRandomArmor();
-        }
 
         this.setCombatTask();
     }
@@ -307,7 +247,6 @@ public class EntityRangedPigman extends EntityMob implements IRangedAttackMob
     public void writeEntityToNBT(NBTTagCompound par1NBTTagCompound)
     {
         super.writeEntityToNBT(par1NBTTagCompound);
-        par1NBTTagCompound.setByte("PigmanType", (byte)this.getSkeletonType());
     }
 
     /**

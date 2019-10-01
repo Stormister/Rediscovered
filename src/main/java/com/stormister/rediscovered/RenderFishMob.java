@@ -1,6 +1,7 @@
 package com.stormister.rediscovered;
 
 import net.minecraft.client.renderer.entity.RenderLiving;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.passive.EntitySquid;
@@ -10,9 +11,9 @@ public class RenderFishMob extends RenderLiving
 {
 	private static final ResourceLocation field_110871_a = new ResourceLocation(mod_Rediscovered.modid + ":" + "textures/models/Fish.png");
 	
-    public RenderFishMob(ModelFish modelFish, float f)
+    public RenderFishMob(RenderManager p_i46173_1_, ModelFish modelFish, float f)
     {
-        super(new ModelFish(), 0.3F);
+        super(p_i46173_1_, new ModelFish(), 0.3F);
     }
 
     /**

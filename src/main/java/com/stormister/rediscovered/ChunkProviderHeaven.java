@@ -4,16 +4,21 @@ import java.util.List;
 import java.util.Random;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockFlower;
+import net.minecraft.block.BlockFlower.EnumFlowerType;
 import net.minecraft.block.BlockSand;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.IProgressUpdate;
-import net.minecraft.world.ChunkPosition;
 import net.minecraft.world.SpawnerAnimals;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.biome.BiomeGenBase.SpawnListEntry;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkPrimer;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.MapGenBase;
 import net.minecraft.world.gen.feature.WorldGenCactus;
@@ -82,7 +87,7 @@ public class ChunkProviderHeaven implements IChunkProvider
         mobSpawnerNoise = new NoiseOctavesBeta(rand, 8);
     }
 
-    public void generateTerrain(int i, int j, Block blocks[], BiomeGenBase abiomegenbase[], double ad[])
+    public void generateTerrain(int i, int j, ChunkPrimer primer, BiomeGenBase abiomegenbase[], double ad[])
     {
         byte byte0 = 2;
         int k = byte0 + 1;
@@ -111,29 +116,33 @@ public class ChunkProviderHeaven implements IChunkProvider
                         double d11 = d2;
                         double d12 = (d3 - d1) * d9;
                         double d13 = (d4 - d2) * d9;
-                        for(int i2 = 0; i2 < 8; i2++)
+                        //Imported from ChunkProviderEnd
+                        for (int i2 = 0; i2 < 8; ++i2)
                         {
-                            int j2 = i2 + i1 * 8 << 11 | 0 + j1 * 8 << 7 | k1 * 4 + l1;
-                            char c = '\200';
                             double d14 = 0.125D;
                             double d15 = d10;
                             double d16 = (d11 - d10) * d14;
-                            for(int k2 = 0; k2 < 8; k2++)
+
+                            for (int j2 = 0; j2 < 8; ++j2)
                             {
-                                Block l2 = Blocks.air;
-                                if(d15 > 0.0D)
+                                IBlockState iblockstate = null;
+
+                                if (d15 > 0.0D)
                                 {
-									l2 = Blocks.stone; 
+                                    iblockstate = Blocks.stone.getDefaultState();
                                 }
 
-                                blocks[j2] = l2;
-                                j2 += c;
+                                int k2 = i2 + i1 * 8;
+                                int l2 = l1 + k1 * 4;
+                                int i3 = j2 + j1 * 8;
+                                primer.setBlockState(k2, l2, i3, iblockstate);
                                 d15 += d16;
                             }
 
                             d10 += d12;
                             d11 += d13;
                         }
+                        
 
                         d1 += d5;
                         d2 += d6;
@@ -149,72 +158,57 @@ public class ChunkProviderHeaven implements IChunkProvider
 
     }
 
-    public void replaceBlocksForBiome(int i, int j, Block blocks[], BiomeGenBase abiomegenbase[])
+    public void replaceBlocksForBiome(int io, int jo, ChunkPrimer primer, BiomeGenBase abiomegenbase[])
     {
-        byte byte0 = 64;
-        double d = 0.03125D;
-        sandNoise = field_909_n.generateNoiseOctaves(sandNoise, i * 16, j * 16, 0.0D, 16, 16, 1, d, d, 1.0D);
-        gravelNoise = field_909_n.generateNoiseOctaves(gravelNoise, i * 16, 109.0134D, j * 16, 16, 1, 16, d, 1.0D, d);
-        stoneNoise = field_908_o.generateNoiseOctaves(stoneNoise, i * 16, j * 16, 0.0D, 16, 16, 1, d * 2D, d * 2D, d * 2D);
-        for(int k = 0; k < 16; k++)
+    	for (int i = 0; i < 16; ++i)
         {
-            for(int l = 0; l < 16; l++)
+            for (int j = 0; j < 16; ++j)
             {
-                BiomeGenBase biomegenbase = abiomegenbase[k + l * 16];
-                boolean flag = sandNoise[k + l * 16] + rand.nextDouble() * 0.20000000000000001D > 0.0D;
-                boolean flag1 = gravelNoise[k + l * 16] + rand.nextDouble() * 0.20000000000000001D > 3D;
-                int i1 = (int)(stoneNoise[k + l * 16] / 3D + 3D + rand.nextDouble() * 0.25D);
-                int j1 = -1;
-                Block byte1 = biomegenbase.topBlock;
-                Block byte2 = biomegenbase.fillerBlock;
-                for(int k1 = 127; k1 >= 0; k1--)
+                byte b0 = 1;
+                int k = -1;
+                IBlockState iblockstate = Blocks.grass.getDefaultState();
+                IBlockState iblockstate1 = Blocks.dirt.getDefaultState();
+
+                for (int l = 127; l >= 0; --l)
                 {
-                    int l1 = (l * 16 + k) * 128 + k1;
-                    Block byte3 = blocks[l1];
-                    if(byte3 == Blocks.air)
+                    IBlockState iblockstate2 = primer.getBlockState(i, l, j);
+
+                    if (iblockstate2.getBlock().getMaterial() == Material.air)
                     {
-                        j1 = -1;
-                        continue;
+                        k = -1;
                     }
-                    if(byte3 != Blocks.stone)
+                    else if (iblockstate2.getBlock() == Blocks.stone)
                     {
-                        continue;
-                    }
-                    if(j1 == -1)
-                    {
-                        if(i1 <= 0)
+                        if (k == -1)
                         {
-                            byte1 = biomegenbase.topBlock;
-                            byte2 = biomegenbase.fillerBlock;
-                        } else
-                        if(k1 >= byte0 - 4 && k1 <= byte0 + 1)
-                        {
-                            byte1 = biomegenbase.topBlock;
-                            byte2 = biomegenbase.fillerBlock;
+                            if (b0 <= 0)
+                            {
+                                iblockstate = Blocks.grass.getDefaultState();
+                                iblockstate1 = Blocks.dirt.getDefaultState();
+                            }
+
+                            k = b0;
+
+                            if (l >= 0)
+                            {
+                            	primer.setBlockState(i, l, j, iblockstate);
+                            }
+                            else
+                            {
+                            	primer.setBlockState(i, l, j, iblockstate1);
+                            }
                         }
-                        blocks[l1] = byte1;
-                        j1 = i1;
-                        continue;
-                    }
-                    if(j1 <= 0)
-                    {
-                        continue;
-                    }
-                    j1--;
-                    blocks[l1] = byte2;
-                    if(j1 == 0 && byte2 == Blocks.sand)
-                    {
-                        j1 = rand.nextInt(4);
-                        byte2 = Blocks.sandstone;
+                        else if (k > 0)
+                        {
+                            --k;
+                            primer.setBlockState(i, l, j, iblockstate1);
+                        }
                     }
                 }
-
             }
-
         }
-
     }
-
+    
     public Chunk loadChunk(int par1, int par2)
     {
         return provideChunk(par1, par2);
@@ -222,15 +216,16 @@ public class ChunkProviderHeaven implements IChunkProvider
 
     public Chunk provideChunk(int i, int j)
     {
+    	ChunkPrimer primer = new ChunkPrimer();
         rand.setSeed((long)i * 0x4f9939f508L + (long)j * 0x1ef1565bd5L);
         Block blocks[] = new Block[32768];
         biomesForGeneration = worldObj.getWorldChunkManager().loadBlockGeneratorData(biomesForGeneration, i * 16, j * 16, 16, 16);
         double ad[] = ChunkManagerOld.temperature;
-        generateTerrain(i, j, blocks, biomesForGeneration, ad);
-        replaceBlocksForBiome(i, j, blocks, biomesForGeneration);
+        generateTerrain(i, j, primer, biomesForGeneration, ad);
+        replaceBlocksForBiome(i, j, primer, biomesForGeneration);
         field_902_u.generate(this, worldObj, i, j, blocks);
 
-        Chunk chunk = new Chunk(worldObj, blocks, i, j);
+        Chunk chunk = new Chunk(worldObj, primer, i, j);
         byte abyte1[] = chunk.getBiomeArray();
 
         for (int k = 0; k < abyte1.length; k++)
@@ -357,13 +352,14 @@ public class ChunkProviderHeaven implements IChunkProvider
     {
         return true;
     }
-
+    @Override
     public void populate(IChunkProvider ichunkprovider, int i, int j)
     {
 			BlockSand.fallInstantly = true;
 			int k = i * 16;
 			int l = j * 16;
-			BiomeGenBase biomegenbase = worldObj.getWorldChunkManager().getBiomeGenAt(k + 16, l + 16);
+			
+			BiomeGenBase biomegenbase = worldObj.getWorldChunkManager().getBiomeGenerator(new BlockPos(k + 16, 64, l + 16), null);
 			rand.setSeed(worldObj.getSeed());
 			long l1 = (rand.nextLong() / 2L) * 2L + 1L;
 			long l2 = (rand.nextLong() / 2L) * 2L + 1L;
@@ -378,36 +374,16 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int l4 = rand.nextInt(128);
 	            int i8 = l + rand.nextInt(16) + 8;
-	            (new WorldGenLakes(Blocks.water)).generate(worldObj, rand, i1, l4, i8);
+	            (new WorldGenLakes(Blocks.water)).generate(worldObj, rand, new BlockPos(i1, l4, i8));
 	        }
-
-	        if (rand.nextInt(8) == 0)
-	        {
-	            int j1 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int i5 = rand.nextInt(rand.nextInt(120) + 8);
-	            int j8 = l + rand.nextInt(16) + 8;
-
-	            if (i5 < 64 || rand.nextInt(10) == 0)
-	            {
-	            }
-	        }
-
-	        for (int k1 = 0; k1 < 8; k1++)
-	        {
-	            int j5 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int k8 = rand.nextInt(128);
-	            int i13 = l + rand.nextInt(16) + 8;
-	        }
-
+			
 	        for (int i2 = 0; i2 < 10; i2++)
 	        {
 	            int k5 = k + rand.nextInt(16);
 	            worldObj.getClass();
 	            int l8 = rand.nextInt(128);
 	            int j13 = l + rand.nextInt(16);
-	            (new WorldGenClay(32)).generate(worldObj, rand, k5, l8, j13);
+	            (new WorldGenClay(32)).generate(worldObj, rand, new BlockPos(k5, l8, j13));
 	        }
 
 	        for (int j2 = 0; j2 < 20; j2++)
@@ -416,23 +392,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int i9 = rand.nextInt(128);
 	            int k13 = l + rand.nextInt(16);
-	            (new WorldGenMinable(Blocks.dirt, 32)).generate(worldObj, rand, l5, i9, k13);
-	        }
-
-	        for (int k2 = 0; k2 < 10; k2++)
-	        {
-	            int i6 = k + rand.nextInt(16);
-	            worldObj.getClass();
-	            int j9 = rand.nextInt(128);
-	            int l13 = l + rand.nextInt(16);
-	        }
-
-	        for (int i3 = 0; i3 < 20; i3++)
-	        {
-	            int j6 = k + rand.nextInt(16);
-	            worldObj.getClass();
-	            int k9 = rand.nextInt(128);
-	            int i14 = l + rand.nextInt(16);
+	            (new WorldGenMinable(Blocks.dirt.getDefaultState(), 32)).generate(worldObj, rand, new BlockPos(l5, i9, k13));
 	        }
 
 	        for (int j3 = 0; j3 < 20; j3++)
@@ -441,7 +401,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int l9 = rand.nextInt(64);
 	            int j14 = l + rand.nextInt(16);
-	            (new WorldGenMinable(Blocks.iron_ore, 8)).generate(worldObj, rand, k6, l9, j14);
+	            (new WorldGenMinable(Blocks.iron_ore.getDefaultState(), 8)).generate(worldObj, rand, new BlockPos(k6, l9, j14));
 	        }
 
 	        for (int k3 = 0; k3 < 2; k3++)
@@ -450,15 +410,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int i10 = rand.nextInt(32);
 	            int k14 = l + rand.nextInt(16);
-	            (new WorldGenMinable(Blocks.gold_ore, 8)).generate(worldObj, rand, l6, i10, k14);
-	        }
-
-	        for (int l3 = 0; l3 < 8; l3++)
-	        {
-	            int i7 = k + rand.nextInt(16);
-	            worldObj.getClass();
-	            int j10 = rand.nextInt(16);
-	            int l14 = l + rand.nextInt(16);
+	            (new WorldGenMinable(Blocks.gold_ore.getDefaultState(), 8)).generate(worldObj, rand, new BlockPos(l6, i10, k14));
 	        }
 
 	        for (int i4 = 0; i4 < 1; i4++)
@@ -467,7 +419,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int k10 = rand.nextInt(16);
 	            int i15 = l + rand.nextInt(16);
-	            (new WorldGenMinable(Blocks.diamond_ore, 7)).generate(worldObj, rand, j7, k10, i15);
+	            (new WorldGenMinable(Blocks.diamond_ore.getDefaultState(), 7)).generate(worldObj, rand, new BlockPos(j7, k10, i15));
 	        }
 
 	        for (int j4 = 0; j4 < 1; j4++)
@@ -477,7 +429,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int l10 = rand.nextInt(16) + rand.nextInt(16);
 	            int j15 = l + rand.nextInt(16);
-	            (new WorldGenMinable(Blocks.lapis_ore, 6)).generate(worldObj, rand, k7, l10, j15);
+	            (new WorldGenMinable(Blocks.lapis_ore.getDefaultState(), 6)).generate(worldObj, rand, new BlockPos(k7, l10, j15));
 	        }
 
 	        d = 0.5D;
@@ -493,15 +445,14 @@ public class ChunkProviderHeaven implements IChunkProvider
 	        {
 	            int k15 = k + rand.nextInt(16) + 8;
 	            int j18 = l + rand.nextInt(16) + 8;
-	            WorldGenerator worldgenerator = biomegenbase.func_150567_a(rand);
-	            worldgenerator.setScale(1.0D, 1.0D, 1.0D);
-	            worldgenerator.generate(worldObj, rand, k15, worldObj.getHeightValue(k15, j18), j18);
+	            WorldGenerator worldgenerator = biomegenbase.genBigTreeChance(rand);
+	            worldgenerator.generate(worldObj, rand, new BlockPos(k15, worldObj.getChunkFromChunkCoords(k15 >> 4, j18 >> 4).getHeightValue(k15 & 15, j18 & 15), j18));
 	        }
 	        for (int i11 = 0; i11 < l7; i11++)
 	        {
 	            int k15 = k + rand.nextInt(16) + 8;
 	            int j18 = l + rand.nextInt(16) + 8;
-	            (new WorldGenCherryTrees(mod_Rediscovered.CherryLog, mod_Rediscovered.CherryLeaves, 0, 0)).generate(worldObj, rand, k15, worldObj.getHeightValue(k15, j18), j18);
+	            (new WorldGenCherryTrees(true)).generate(worldObj, rand, new BlockPos(k15, worldObj.getChunkFromChunkCoords(k15 >> 4, j18 >> 4).getHeightValue(k15 & 15, j18 & 15), j18));
 	        }
 
 	        for (int j11 = 0; j11 < 2; j11++)
@@ -510,32 +461,16 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int k18 = rand.nextInt(128);
 	            int i21 = l + rand.nextInt(16) + 8;
-	            (new WorldGenFlowers(Blocks.yellow_flower)).generate(worldObj, rand, l15, k18, i21);
+	            (new WorldGenFlowers(Blocks.yellow_flower, EnumFlowerType.DANDELION)).generate(worldObj, rand, new BlockPos(l15, k18, i21));
 	        }
 
-	        if (rand.nextInt(2) == 0)
+	        for (int j11 = 0; j11 < 2; j11++)
 	        {
 	            int k11 = k + rand.nextInt(16) + 8;
 	            worldObj.getClass();
 	            int i16 = rand.nextInt(128);
 	            int l18 = l + rand.nextInt(16) + 8;
-	            (new WorldGenFlowers(mod_Rediscovered.Rose)).generate(worldObj, rand, k11, i16, l18);
-	        }
-
-	        if (rand.nextInt(4) == 0)
-	        {
-	            int l11 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int j16 = rand.nextInt(128);
-	            int i19 = l + rand.nextInt(16) + 8;
-	        }
-
-	        if (rand.nextInt(8) == 0)
-	        {
-	            int i12 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int k16 = rand.nextInt(128);
-	            int j19 = l + rand.nextInt(16) + 8;
+	            (new WorldGenRose(mod_Rediscovered.Rose, EnumFlowerType.POPPY)).generate(worldObj, rand, new BlockPos(k11, i16, l18));
 	        }
 
 	        for (int j12 = 0; j12 < 10; j12++)
@@ -544,31 +479,7 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int k19 = rand.nextInt(128);
 	            int j21 = l + rand.nextInt(16) + 8;
-	            (new WorldGenReed()).generate(worldObj, rand, l16, k19, j21);
-	        }
-
-	        if (rand.nextInt(32) == 0)
-	        {
-	            int k12 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int i17 = rand.nextInt(128);
-	            int l19 = l + rand.nextInt(16) + 8;
-	        }
-
-	        int l12 = 0;
-
-	        if (biomegenbase == BiomeGenBase.desert)
-	        {
-	            l12 += 10;
-	        }
-
-	        for (int j17 = 0; j17 < l12; j17++)
-	        {
-	            int i20 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int k21 = rand.nextInt(128);
-	            int k22 = l + rand.nextInt(16) + 8;
-	            (new WorldGenCactus()).generate(worldObj, rand, i20, k21, k22);
+	            (new WorldGenReed()).generate(worldObj, rand, new BlockPos(l16, k19, j21));
 	        }
 
 	        for (int k17 = 0; k17 < 50; k17++)
@@ -577,27 +488,20 @@ public class ChunkProviderHeaven implements IChunkProvider
 	            worldObj.getClass();
 	            int l21 = rand.nextInt(rand.nextInt(120) + 8);
 	            int l22 = l + rand.nextInt(16) + 8;
-	            (new WorldGenLiquids(Blocks.flowing_water)).generate(worldObj, rand, j20, l21, l22);
-	        }
-
-	        for (int l17 = 0; l17 < 20; l17++)
-	        {
-	            int k20 = k + rand.nextInt(16) + 8;
-	            worldObj.getClass();
-	            int i22 = rand.nextInt(rand.nextInt(rand.nextInt(112) + 8) + 8);
-	            int i23 = l + rand.nextInt(16) + 8;
+	            (new WorldGenLiquids(Blocks.flowing_water)).generate(worldObj, rand, new BlockPos(j20, l21, l22));
 	        }
 
 	        for (int i18 = 0; i18 < 16; i18++)
 	        {
 	            for (int l20 = 0; l20 < 16; l20++)
 	            {
-	                int j22 = worldObj.getPrecipitationHeight(k + i18, l + l20);
+	            	
+	                int j22 = worldObj.getPrecipitationHeight(new BlockPos(k + i18, 70, l + l20)).getY();
 	                
 	                //SNOW HEIGHT
 	                if (j22 > 70 && j22 < 96)
 	                {
-	                    worldObj.setBlock(i18 + k, j22, l20 + l, Blocks.snow_layer);
+	                    worldObj.setBlockState(new BlockPos(i18 + k, j22, l20 + l), Blocks.snow_layer.getDefaultState());
 	                }
 	            }
 	        }
@@ -632,13 +536,8 @@ public class ChunkProviderHeaven implements IChunkProvider
 
     public List getPossibleCreatures(EnumCreatureType par1EnumCreatureType, int par2, int par3, int par4)
     {
-        BiomeGenBase var5 = this.worldObj.getBiomeGenForCoords(par2, par4);
+        BiomeGenBase var5 = this.worldObj.getBiomeGenForCoords(new BlockPos(par2, 64, par4));
         return var5 == null ? null : var5.getSpawnableList(par1EnumCreatureType);
-    }
-
-    public ChunkPosition func_147416_a(World par1World, String par2Str, int par3, int par4, int par5)
-    {
-        return null;
     }
 
     public int getLoadedChunkCount()
@@ -648,7 +547,27 @@ public class ChunkProviderHeaven implements IChunkProvider
 
     public void saveExtraData() {}
 
-    public void recreateStructures(int par1, int par2)
+    public void recreateStructures(Chunk p_180514_1_, int p_180514_2_, int p_180514_3_)
+    {}
+
+	@Override
+	public Chunk provideChunk(BlockPos blockPosIn) {
+		return this.provideChunk(blockPosIn.getX(), blockPosIn.getZ());
+	}
+
+	@Override
+	public boolean func_177460_a(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_) {
+		return true;
+	}
+
+	@Override
+	public List<SpawnListEntry> getPossibleCreatures(EnumCreatureType creatureType, BlockPos pos)
     {
+        return this.worldObj.getBiomeGenForCoords(pos).getSpawnableList(creatureType);
+    }
+
+	@Override
+	public BlockPos getStrongholdGen(World worldIn, String structureName, BlockPos position) {
+		return null;
 	}
 }

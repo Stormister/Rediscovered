@@ -1,67 +1,67 @@
 package com.stormister.rediscovered;
 
-import static net.minecraftforge.common.util.ForgeDirection.EAST;
-import static net.minecraftforge.common.util.ForgeDirection.NORTH;
-import static net.minecraftforge.common.util.ForgeDirection.SOUTH;
-import static net.minecraftforge.common.util.ForgeDirection.WEST;
-import static net.minecraftforge.common.util.ForgeDirection.DOWN;
-import static net.minecraftforge.common.util.ForgeDirection.UP;
-
-import java.util.Iterator;
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
+import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.passive.EntityOcelot;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryLargeChest;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.minecart.MinecartInteractEvent;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class BlockLectern extends BlockContainer
+public class BlockLectern extends BlockContainer implements ITileEntityProvider
 {
     private Random random = new Random();
     /** Axis aligned bounding box. */
+    public static final PropertyDirection FACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
     public final AxisAlignedBB boundingBox;
     public int height = 1;
     public int meta;
+    private final String name = "Lectern";
 
     protected BlockLectern()
     {
         super(Material.wood);
-        this.setCreativeTab(CreativeTabs.tabDecorations);
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
         this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.0F, 0.875F);
-        this.boundingBox = AxisAlignedBB.getBoundingBox(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+        this.setLightOpacity(0);
+        this.setCreativeTab(CreativeTabs.tabDecorations);
+        this.useNeighborBrightness = true;
+        this.boundingBox = AxisAlignedBB.fromBounds(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
     }
 
     /**
      * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
      * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
      */
+    @Override
     public boolean isOpaqueCube()
+    {
+        return false;
+    }
+    
+    public boolean isFullCube()
     {
         return false;
     }
@@ -69,25 +69,24 @@ public class BlockLectern extends BlockContainer
     /**
      * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
      */
-    public boolean renderAsNormalBlock()
+    @Override
+    public boolean isNormalCube()
     {
         return false;
     }
     
-    /**
-     * Returns a new instance of a block's tile entity class. Called on placing the block.
-     */
-    public TileEntity createNewTileEntity(World par1World, int par1)
+    protected BlockState createBlockState()
     {
-        return new TileEntityLectern();
+        return new BlockState(this, new IProperty[] {FACING});
     }
     
     /**
      * Returns a new instance of a block's tile entity class. Called on placing the block.
      */
-    public TileEntity getTileEntity(World par1World, int par1)
+    @Override
+    public TileEntity createNewTileEntity(World worldIn, int meta)
     {
-        return this.createNewTileEntity(par1World, par1);
+        return new TileEntityLectern();
     }
     
     @Override
@@ -97,173 +96,98 @@ public class BlockLectern extends BlockContainer
     }
     
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World w, int x, int y, int z)
+    public AxisAlignedBB getCollisionBoundingBox(World world, BlockPos pos, IBlockState state)
     {
-        this.setBlockBoundsBasedOnState(w, x, y, z);
-        return super.getCollisionBoundingBoxFromPool(w, x, y, z);
+        this.setBlockBoundsBasedOnState(world, pos);
+        return super.getCollisionBoundingBox(world, pos, state);
     }
     
     /**
      * Updates the blocks bounds based on its current state. Args: world, x, y, z
      */
-    public void setBlockBoundsBasedOnState(IBlockAccess par1IBlockAccess, int par2, int par3, int par4)
+    public void setBlockBoundsBasedOnState(IBlockAccess par1IBlockAccess, BlockPos pos)
     {
-        if (par1IBlockAccess.getBlock(par2, par3, par4 - 1) == this)
-        {
-        	this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
-        }
-        else if (par1IBlockAccess.getBlock(par2, par3, par4 + 1) == this)
-        {
-        	this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
-        }
-        else if (par1IBlockAccess.getBlock(par2 - 1, par3, par4) == this)
-        {
-        	this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
-        }
-        else if (par1IBlockAccess.getBlock(par2 + 1, par3, par4) == this)
-        {
-        	this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
-        }
-        else
-        {
-        	this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
-        }
+        this.setBlockBounds(0.125F, 0.0F, 0.125F, 0.875F, 1.2F, 0.875F);
     }
 
     @Override
-    public void onBlockAdded(World world, int i, int j, int k)
+    public void onBlockAdded(World world, BlockPos pos, IBlockState state)
     {
-        super.onBlockAdded(world, i, j, k);
-        world.markBlockForUpdate(i, j, k);
+        super.onBlockAdded(world, pos, state);
+        world.markBlockForUpdate(pos);
+    }
+    
+    /**
+     * Convert the given metadata into a BlockState for this Block
+     */
+    public IBlockState getStateFromMeta(int meta)
+    {
+        EnumFacing enumfacing = EnumFacing.getFront(meta);
 
+        if (enumfacing.getAxis() == EnumFacing.Axis.Y)
+        {
+            enumfacing = EnumFacing.NORTH;
+        }
+
+        return this.getDefaultState().withProperty(FACING, enumfacing);
     }
 
-    
-    public void onBlockPlacedBy(World par1World, int par2, int par3, int par4, EntityLivingBase par5EntityLiving, ItemStack itemStack)
+    /**
+     * Convert the BlockState into the correct metadata value
+     */
+    public int getMetaFromState(IBlockState state)
     {
-    	Block l = par1World.getBlock(par2, par3, par4 - 1);
-    	Block i1 = par1World.getBlock(par2, par3, par4 + 1);
-    	Block j1 = par1World.getBlock(par2 - 1, par3, par4);
-    	Block k1 = par1World.getBlock(par2 + 1, par3, par4);
-        byte b0 = 0;
-        int l1 = MathHelper.floor_double((double)(par5EntityLiving.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-
-        if (l1 == 0)
-        {
-            b0 = 2;
-        }
-
-        if (l1 == 1)
-        {
-            b0 = 3;
-        }
-
-        if (l1 == 2)
-        {
-            b0 = 4;
-        }
-
-        if (l1 == 3)
-        {
-            b0 = 5;
-        }
-
-        if (l != this && i1 != this && j1 != this && k1 != this)
-        {
-            par1World.setBlockMetadataWithNotify(par2, par3, par4, b0, 3);
-        }
-        else
-        {
-            if ((l == this || i1 == this) && (b0 == 4 || b0 == 5))
-            {
-                if (l == this)
-                {
-                    par1World.setBlockMetadataWithNotify(par2, par3, par4 - 1, b0, 3);
-                }
-                else
-                {
-                    par1World.setBlockMetadataWithNotify(par2, par3, par4 + 1, b0, 3);
-                }
-
-                par1World.setBlockMetadataWithNotify(par2, par3, par4, b0, 3);
-            }
-
-            if ((j1 == this || k1 == this) && (b0 == 2 || b0 == 3))
-            {
-                if (j1 == this)
-                {
-                    par1World.setBlockMetadataWithNotify(par2 - 1, par3, par4, b0, 3);
-                }
-                else
-                {
-                    par1World.setBlockMetadataWithNotify(par2 + 1, par3, par4, b0, 3);
-                }
-
-                par1World.setBlockMetadataWithNotify(par2, par3, par4, b0, 3);
-            }
-        }
+        return ((EnumFacing)state.getValue(FACING)).getIndex();
+    }
+    
+    @Override
+    public IBlockState onBlockPlaced(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer)
+    {
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing());
+    }
+    
+    @Override
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack)
+    {
+        EnumFacing enumfacing = EnumFacing.getHorizontal(MathHelper.floor_double((double)(placer.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3).getOpposite();
+        state = state.withProperty(FACING, enumfacing);
+        worldIn.setBlockState(pos, state, 3);
     }
     
     /**
      * Called upon block activation (right click on the block.)
      */
-    public boolean onBlockActivated(World par1World, int par2, int par3, int par4, EntityPlayer par5EntityPlayer, int par6, float par7, float par8, float par9)
+    @Override
+    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer entityplayer, EnumFacing side, float hitX, float hitY, float hitZ)
     {
-    	meta = par1World.getBlockMetadata(par2, par3, par4);
-    	par1World.setBlock(par2, par3, par4, mod_Rediscovered.LecternOpen);
-    	par1World.setBlockMetadataWithNotify(par2, par3, par4, meta, 3);
-    	
+    	meta = world.getBlockState(pos).getBlock().getMetaFromState(state);
+    	world.setBlockState(pos, mod_Rediscovered.LecternOpen.getStateFromMeta(meta), 3);
         return true;
     }
 
     /**
      * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
      */
-    public boolean canPlaceBlockAt(World par1World, int par2, int par3, int par4)
+    @Override
+    public boolean canPlaceBlockAt(World worldIn, BlockPos pos)
     {
         return true;
     }
     
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void onNeighborBlockChange(World w, int x, int y, int z, int par5)
-    {
-    	
-    }
-    
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int quantityDropped(Random random)
-    {
-        return 1;
-    }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public Block idDropped(int i, Random random, int j)
-    {
-        return mod_Rediscovered.Lectern;
-    }
-    
     @SideOnly(Side.CLIENT)
-
-    /**
-     * only called by clickMiddleMouseButton , and passed to inventory.setCurrentItem (along with isCreative)
-     */
-    public Block idPicked(World par1World, int par2, int par3, int par4)
+    @Override
+    public ItemStack getPickBlock(MovingObjectPosition target, World world, BlockPos pos)
     {
-        return mod_Rediscovered.Lectern;
+        return new ItemStack(mod_Rediscovered.Lectern);
+    }
+    @Override
+    public Item getItemDropped(IBlockState state, Random rand, int fortune)
+    {
+        return Item.getItemFromBlock(mod_Rediscovered.Lectern);
     }
     
-//    /**
-//     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-//     */
-//    public IIcon getIcon(int par1, int par2)
-//    {
-//        return Blocks.planks.getBlockTextureFromSide(1);
-//    }
+    public String getName()
+    {
+    	return name;
+    }
 }

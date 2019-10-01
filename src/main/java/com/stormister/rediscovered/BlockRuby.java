@@ -4,17 +4,17 @@ import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 public class BlockRuby extends Block
 {
-	String texture;
-	
+	private final String name = "RubyBlock";
     public BlockRuby(String texture)
     {
         super(Material.rock);
-        this.texture = texture;
         this.setHarvestLevel("pickaxe", 1);
+        GameRegistry.registerBlock(this, name);
+        setUnlocalizedName(mod_Rediscovered.modid + "_" + name);
     }
 
     /**
@@ -33,8 +33,8 @@ public class BlockRuby extends Block
         return mod_Rediscovered.RubyBlock;
     }
     
-//    public void registerBlockIcons(IIconRegister iconRegister) 
-//    {
-//    	this.blockIcon = iconRegister.registerIcon(mod_Rediscovered.modid + ":" + texture);
-//    }
+    public String getName()
+    {
+    	return name;
+    }
 }

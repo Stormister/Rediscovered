@@ -2,24 +2,17 @@ package com.stormister.rediscovered;
 
 import java.util.Random;
 
-import cpw.mods.fml.common.eventhandler.Event.Result;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.client.multiplayer.WorldClient;
+import com.google.common.base.Predicate;
+import com.mojang.authlib.GameProfile;
+
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
 import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.entity.monster.EntityGiantZombie;
-import net.minecraft.entity.monster.EntityMob;
-import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,31 +21,23 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.ArrowNockEvent;
 import net.minecraftforge.event.entity.player.BonemealEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
-import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
+import net.minecraftforge.fml.common.eventhandler.Event.Result;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class RediscoveredEventHandler
 {
@@ -68,10 +53,11 @@ public class RediscoveredEventHandler
 		InventoryPlayer inv = player.inventory;
 		ItemStack itemStack = inv.getStackInSlot(inv.currentItem);
 		World world = event.entityLiving.worldObj;
+		
 		if(player.dimension == 0 && !world.isDaytime() && itemRand.nextInt(100)<=mod_Rediscovered.DreamChance && (itemStack == null || itemStack.getItem() != mod_Rediscovered.DreamPillow) && player instanceof EntityPlayerMP)
 		{
 			ExtendedPlayer props = ExtendedPlayer.get((EntityPlayer) event.entity);
-			props.setRespawn(event.x, event.y, event.z);
+			props.setRespawn(event.pos.getX(), event.pos.getY(), event.pos.getZ());
 			EntityPlayerMP thePlayer = (EntityPlayerMP) player;
 			thePlayer.mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, mod_Rediscovered.DimID, new SkyDimensionTeleporter(thePlayer.mcServer.worldServerForDimension(mod_Rediscovered.DimID)));
 		}
@@ -94,16 +80,16 @@ public class RediscoveredEventHandler
 							ExtendedPlayer props = ExtendedPlayer.get((EntityPlayer) event.entity);
 							event.setCanceled(true);
 							e.mcServer.getConfigurationManager().transferPlayerToDimension(e, 0, new SkyDimensionTeleporter(e.mcServer.worldServerForDimension(0)));
-							ChunkCoordinates coordinates = props.getRespawn();
+							BlockPos coordinates = props.getRespawn();
 			        		if(coordinates!=null)	
 			        			coordinates = this.verifyRespawnCoordinates(e.mcServer.worldServerForDimension(0), coordinates, true, e);
 			        		if(coordinates == null) {
 			                	coordinates = world.getSpawnPoint();
-			            		e.setPositionAndUpdate((double) coordinates.posX + 0.5D, (double) coordinates.posY + 3, (double) coordinates.posZ + 0.5D);
+			            		e.setPositionAndUpdate((double) coordinates.getX() + 0.5D, (double) coordinates.getY() + 3, (double) coordinates.getZ() + 0.5D);
 			            		e.addChatComponentMessage(new ChatComponentTranslation("message.missingbed", new Object[0]));
 			        		}
 			        		else if(coordinates != null) {
-			            		e.setPositionAndUpdate((double) coordinates.posX + 0.5D, (double) coordinates.posY + 3, (double) coordinates.posZ + 0.5D);
+			            		e.setPositionAndUpdate((double) coordinates.getX() + 0.5D, (double) coordinates.getY() + 3, (double) coordinates.getZ() + 0.5D);
 			                }
 							e.fallDistance = 0;
 						}
@@ -120,28 +106,28 @@ public class RediscoveredEventHandler
 		ItemStack itemStack = inv.getStackInSlot(inv.currentItem);
 		final World world = (World) event.entityLiving.worldObj;
 
-		if(!event.entityLiving.worldObj.isRemote && event.action == event.action.RIGHT_CLICK_BLOCK && world.getBlock(event.x, event.y, event.z) == Blocks.bed && ((itemStack != null && itemStack.getItem() == mod_Rediscovered.DreamPillow && player.dimension == 0 && (mod_Rediscovered.DaytimeBed || (!mod_Rediscovered.DaytimeBed && !world.isDaytime()))) || (player.dimension == mod_Rediscovered.DimID)) && player instanceof EntityPlayerMP){
+		if(!event.entityLiving.worldObj.isRemote && event.action == event.action.RIGHT_CLICK_BLOCK && world.getBlockState(event.pos).getBlock().equals(Blocks.bed) && ((itemStack != null && itemStack.getItem().equals(mod_Rediscovered.DreamPillow) && (mod_Rediscovered.DaytimeBed || (!mod_Rediscovered.DaytimeBed && !world.isDaytime()))) || player.dimension == mod_Rediscovered.DimID) && player instanceof EntityPlayerMP){
         	event.setCanceled(true);
 			EntityPlayerMP thePlayer = (EntityPlayerMP) player;
 			ExtendedPlayer props = ExtendedPlayer.get((EntityPlayer) event.entity);
 			if (player.dimension == 0)
         	{            
-				props.setRespawn(event.x, event.y, event.z);
+				props.setRespawn(event.pos.getX(), event.pos.getY(), event.pos.getZ());
 				thePlayer.mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, mod_Rediscovered.DimID, new SkyDimensionTeleporter(thePlayer.mcServer.worldServerForDimension(mod_Rediscovered.DimID)));
         	}
         	else if (player.dimension == mod_Rediscovered.DimID)
         	{
         		thePlayer.mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, 0, new SkyDimensionTeleporter(thePlayer.mcServer.worldServerForDimension(0)));
-        		ChunkCoordinates coordinates = props.getRespawn();
+        		BlockPos coordinates = props.getRespawn();
         		if(coordinates!=null)	
         			coordinates = this.verifyRespawnCoordinates(thePlayer.mcServer.worldServerForDimension(0), coordinates, true, thePlayer);
         		if(coordinates == null) {
                 	coordinates = world.getSpawnPoint();
-            		thePlayer.setPositionAndUpdate((double) coordinates.posX + 0.5D, (double) coordinates.posY + 3, (double) coordinates.posZ + 0.5D);
+            		thePlayer.setPositionAndUpdate((double) coordinates.getX() + 0.5D, (double) coordinates.getY() + 3, (double) coordinates.getZ() + 0.5D);
             		player.addChatComponentMessage(new ChatComponentTranslation("message.missingbed", new Object[0]));
         		}
         		else if(coordinates != null) {
-            		thePlayer.setPositionAndUpdate((double) coordinates.posX + 0.5D, (double) coordinates.posY + 3, (double) coordinates.posZ + 0.5D);
+            		thePlayer.setPositionAndUpdate((double) coordinates.getX() + 0.5D, (double) coordinates.getY() + 3, (double) coordinates.getZ() + 0.5D);
                 }
 
         	}
@@ -149,32 +135,32 @@ public class RediscoveredEventHandler
 		
 		
 		//Bush Shearing
-		if(event.action == event.action.RIGHT_CLICK_BLOCK && world.getBlock(event.x, event.y, event.z) == Blocks.double_plant && itemStack != null && itemStack.getItem() == Items.shears && player instanceof EntityPlayerMP){
+		if(event.action == event.action.RIGHT_CLICK_BLOCK && world.getBlockState(event.pos).getBlock().equals(Blocks.double_plant) && itemStack != null && itemStack.getItem().equals(Items.shears) && player instanceof EntityPlayerMP){
         	event.setCanceled(true);
-        	if(world.getBlockMetadata(event.x, event.y, event.z) == 4 || (world.getBlockMetadata(event.x, event.y-1, event.z) == 4)){
-        		if(world.getBlockMetadata(event.x, event.y, event.z) == 4){
-        			world.setBlock(event.x, event.y, event.z, mod_Rediscovered.EmptyRoseBush);
-        			world.setBlock(event.x, event.y+1, event.z, mod_Rediscovered.EmptyRoseBushTop);
+        	if(world.getBlockState(event.pos) == Blocks.double_plant.getStateFromMeta(4) || (world.getBlockState(event.pos.down()) == Blocks.double_plant.getStateFromMeta(4))){
+        		if(world.getBlockState(event.pos) == Blocks.double_plant.getStateFromMeta(4)){
+        			world.setBlockState(event.pos, mod_Rediscovered.EmptyRoseBush.getDefaultState());
+        			world.setBlockState(event.pos.up(), mod_Rediscovered.EmptyRoseBushTop.getDefaultState());
         		}
-        		else if((world.getBlockMetadata(event.x, event.y-1, event.z) == 4)){
-        			world.setBlock(event.x, event.y-1, event.z, mod_Rediscovered.EmptyRoseBush);
-        			world.setBlock(event.x, event.y, event.z, mod_Rediscovered.EmptyRoseBushTop);
+        		else if((world.getBlockState(event.pos.down()) == Blocks.double_plant.getStateFromMeta(4))){
+        			world.setBlockState(event.pos.down(), mod_Rediscovered.EmptyRoseBush.getDefaultState());
+        			world.setBlockState(event.pos, mod_Rediscovered.EmptyRoseBushTop.getDefaultState());
         		}
         		ItemStack itemStack2 = new ItemStack(mod_Rediscovered.Rose, world.rand.nextInt(3)+1);
-        		EntityItem item = new EntityItem(world, event.x, event.y, event.z, itemStack2);
+        		EntityItem item = new EntityItem(world, event.pos.getX(), event.pos.getY(), event.pos.getZ(), itemStack2);
         		world.spawnEntityInWorld(item);
         	}
-        	if(world.getBlockMetadata(event.x, event.y, event.z) == 5 || (world.getBlockMetadata(event.x, event.y-1, event.z) == 5)){
-        		if(world.getBlockMetadata(event.x, event.y, event.z) == 5){
-        			world.setBlock(event.x, event.y, event.z, mod_Rediscovered.EmptyPeonyBush);
-        			world.setBlock(event.x, event.y+1, event.z, mod_Rediscovered.EmptyPeonyBushTop);
+        	if(world.getBlockState(event.pos) == Blocks.double_plant.getStateFromMeta(5) || (world.getBlockState(event.pos.down()) == Blocks.double_plant.getStateFromMeta(5))){
+        		if(world.getBlockState(event.pos) == Blocks.double_plant.getStateFromMeta(5)){
+        			world.setBlockState(event.pos, mod_Rediscovered.EmptyPeonyBush.getDefaultState());
+        			world.setBlockState(event.pos.up(), mod_Rediscovered.EmptyPeonyBushTop.getDefaultState());
         		}
-        		else if((world.getBlockMetadata(event.x, event.y-1, event.z) == 5)){
-        			world.setBlock(event.x, event.y-1, event.z, mod_Rediscovered.EmptyPeonyBush);
-        			world.setBlock(event.x, event.y, event.z, mod_Rediscovered.EmptyPeonyBushTop);
+        		else if((world.getBlockState(event.pos.down()) == Blocks.double_plant.getStateFromMeta(5))){
+        			world.setBlockState(event.pos.down(), mod_Rediscovered.EmptyPeonyBush.getDefaultState());
+        			world.setBlockState(event.pos, mod_Rediscovered.EmptyPeonyBushTop.getDefaultState());
         		}
         		ItemStack itemStack2 = new ItemStack(mod_Rediscovered.Peony, world.rand.nextInt(3)+1);
-        		EntityItem item = new EntityItem(world, event.x, event.y, event.z, itemStack2);
+        		EntityItem item = new EntityItem(world, event.pos.getX(), event.pos.getY(), event.pos.getZ(), itemStack2);
         		world.spawnEntityInWorld(item);
         	}
         	itemStack.damageItem(1, player);
@@ -189,15 +175,15 @@ public class RediscoveredEventHandler
 		if(event.entity instanceof EntityZombie){
 			EntityCreature entity = (EntityCreature) event.entity;
 			if(mod_Rediscovered.ScarecrowAttractsMobs){
-				entity.targetTasks.addTask(0, new EntityAINearestAttackableTarget(entity, EntityScarecrow.class, 0, true));
+				entity.targetTasks.addTask(2, new EntityAINearestAttackableTarget(entity, EntityScarecrow.class, true));
 				entity.tasks.addTask(0, new EntityAIAttackOnCollide(entity, EntityScarecrow.class, 0.8D, false));
 			}
 			else
-				entity.tasks.addTask(0, new EntityAIAvoidEntity(entity, EntityScarecrow.class, 8.0F, 1.0D, 0.8D));
+				entity.tasks.addTask(1, new EntityAIAvoidEntity(entity, EntityScarecrow.class, 8.0F, 0.6D, 0.6D));
 		}
 		if(event.entity instanceof EntityAnimal){
 			EntityCreature entity = (EntityCreature) event.entity;
-			entity.tasks.addTask(0, new EntityAIAvoidEntity(entity, EntityScarecrow.class, 8.0F, 1.0D, 0.8D));
+			entity.tasks.addTask(1, new EntityAIAvoidEntity(entity, EntityScarecrow.class, 8.0F, 0.6D, 0.6D));
 		}
 	}
 	
@@ -209,14 +195,14 @@ public class RediscoveredEventHandler
 		World world = event.world;
 		if (event.block.equals(mod_Rediscovered.CherrySapling)) 
 		{
-			event.setResult(Result.ALLOW);
 			if (!world.isRemote)
 			{
 				double chance = 0.45D;
 				if (world.rand.nextFloat() < chance)
 				{
 					//grow tree
-					((BlockCherrySapling)mod_Rediscovered.CherrySapling).func_149878_d(event.world, event.x, event.y, event.z, event.world.rand);
+					event.setResult(Result.ALLOW);
+					((BlockCherrySapling)mod_Rediscovered.CherrySapling).generateTree(event.world, event.pos, event.world.getBlockState(event.pos), event.world.rand);
 					
 				}
 			}
@@ -275,14 +261,14 @@ public class RediscoveredEventHandler
 		ItemStack gquiver = new ItemStack(mod_Rediscovered.GoldQuiver);
 		ItemStack iquiver = new ItemStack(mod_Rediscovered.IronQuiver);
 		ItemStack dquiver = new ItemStack(mod_Rediscovered.DiamondQuiver);
-		ItemStack squiver = new ItemStack(mod_Rediscovered.LeatherChainQuiver);
+		ItemStack lcquiver = new ItemStack(mod_Rediscovered.LeatherChainQuiver);
 		if(inv.getCurrentItem().equals(blah))
 		{
 			
 		        boolean flag = player.capabilities.isCreativeMode || EnchantmentHelper.getEnchantmentLevel(Enchantment.infinity.effectId, par1ItemStack) > 0;
 		        ItemStack itemstack = player.inventory.armorInventory[2];
 		
-		        if (itemstack != null && (itemstack.equals(quiver) || itemstack.equals(lquiver) || itemstack.equals(cquiver) || itemstack.equals(iquiver) || itemstack.equals(gquiver) || itemstack.equals(dquiver) || itemstack.equals(squiver)))
+		        if (itemstack != null && (itemstack.equals(quiver) || itemstack.equals(lquiver) || itemstack.equals(cquiver) || itemstack.equals(iquiver) || itemstack.equals(gquiver) || itemstack.equals(dquiver) || itemstack.equals(lcquiver)))
 		        {
 		        	event.setCanceled(true);
 		        }
@@ -298,47 +284,46 @@ public class RediscoveredEventHandler
     	if (e.entityLiving instanceof EntityPlayer)
         {
             EntityPlayer p = (EntityPlayer) e.entityLiving;
-            
             if (!p.worldObj.isRemote)
             {
                 if (mod_Rediscovered.hasLitLanternOnHotbar(p.inventory))
                 {
-                    Pos3 pos = new Pos3(MathHelper.floor_double(p.posX), MathHelper.floor_double(p.posY) + 1, MathHelper.floor_double(p.posZ));
-
+                	BlockPos pos = new BlockPos(MathHelper.floor_double(p.posX), MathHelper.floor_double(p.posY) + 1, MathHelper.floor_double(p.posZ));
+                	
                     if (p.ridingEntity != null)
                     {
-                        pos = new Pos3(MathHelper.floor_double(p.ridingEntity.posX), MathHelper.floor_double(p.ridingEntity.posY) + 1, MathHelper.floor_double(p.ridingEntity.posZ));
+                        pos = new BlockPos(MathHelper.floor_double(p.ridingEntity.posX), MathHelper.floor_double(p.ridingEntity.posY) + 1, MathHelper.floor_double(p.ridingEntity.posZ));
                     }
 
-                    if (p.worldObj.getBlock(pos.x, pos.y, pos.z).equals(Blocks.air))
+                    if (p.worldObj.getBlockState(pos).equals(Blocks.air.getDefaultState()))
                     {
-                        p.worldObj.setBlock(pos.x, pos.y, pos.z, mod_Rediscovered.Lantern);
+                        p.worldObj.setBlockState(pos, mod_Rediscovered.Lantern.getDefaultState());
                     }
 
-                    if (mod_Rediscovered.usernameLastPosMap.containsKey(p.getDisplayName()))
+                    if (mod_Rediscovered.usernameLastPosMap.containsKey(p.getDisplayNameString()))
                     {
-                        Pos3 pos2 = mod_Rediscovered.usernameLastPosMap.get(p.getDisplayName());
+                    	BlockPos pos2 = mod_Rediscovered.usernameLastPosMap.get(p.getDisplayNameString());
 
-                        if ((pos2.x != pos.x || pos2.y != pos.y || pos2.z != pos.z) && p.worldObj.getBlock(pos2.x, pos2.y, pos2.z).equals(mod_Rediscovered.Lantern))
+                        if ((pos2.getX() != pos.getX() || pos2.getY() != pos.getY() || pos2.getZ() != pos.getZ()) && p.worldObj.getBlockState(pos2).equals(mod_Rediscovered.Lantern.getDefaultState()))
                         {
-                            p.worldObj.setBlock(pos2.x, pos2.y, pos2.z, Blocks.air);
+                            p.worldObj.setBlockToAir(pos2);
                         }
                     }
-
-                    mod_Rediscovered.usernameLastPosMap.put(p.getDisplayName(), pos);
+                    //TODO Find correct string for username
+                    mod_Rediscovered.usernameLastPosMap.put(p.getDisplayNameString(), pos);
                 }
                 else
                 {
-                    if (mod_Rediscovered.usernameLastPosMap.containsKey(p.getDisplayName()))
+                    if (mod_Rediscovered.usernameLastPosMap.containsKey(p.getDisplayNameString()))
                     {
-                        Pos3 pos = mod_Rediscovered.usernameLastPosMap.get(p.getDisplayName());
+                    	BlockPos pos = mod_Rediscovered.usernameLastPosMap.get(p.getDisplayNameString());
 
-                        if (p.worldObj.getBlock(pos.x, pos.y, pos.z).equals(mod_Rediscovered.Lantern))
+                        if (p.worldObj.getBlockState(pos).equals(mod_Rediscovered.Lantern.getDefaultState()))
                         {
-                            p.worldObj.setBlock(pos.x, pos.y, pos.z, Blocks.air);
+                            p.worldObj.setBlockToAir(pos);
                         }
 
-                        mod_Rediscovered.usernameLastPosMap.remove(p.getDisplayName());
+                        mod_Rediscovered.usernameLastPosMap.remove(p.getDisplayNameString());
                     }
                 }
             }
@@ -354,10 +339,10 @@ public class RediscoveredEventHandler
 		    ExtendedPlayer.register((EntityPlayer) event.entity);
     }
     
-    public static ChunkCoordinates verifyRespawnCoordinates(World par0World, ChunkCoordinates par1ChunkCoordinates, boolean par2, EntityPlayerMP player)
+    public static BlockPos verifyRespawnCoordinates(World par0World, BlockPos par1ChunkCoordinates, boolean par2, EntityPlayerMP player)
     {
-//    	player.addChatComponentMessage(new ChatComponentText("" + player.mcServer.worldServerForDimension(0).getBlock(par1ChunkCoordinates.posX, par1ChunkCoordinates.posY, par1ChunkCoordinates.posZ)));
-        if (player.mcServer.worldServerForDimension(0).getBlock(par1ChunkCoordinates.posX, par1ChunkCoordinates.posY, par1ChunkCoordinates.posZ)== Blocks.bed)
+//    	player.addChatComponentMessage(new ChatComponentText("" + player.mcServer.worldServerForDimension(0).getBlockState(par1ChunkCoordinates.posX, par1ChunkCoordinates.posY, par1ChunkCoordinates.posZ)));
+        if (player.mcServer.worldServerForDimension(0).getBlockState(par1ChunkCoordinates).getBlock().equals(Blocks.bed))
         {
             return par1ChunkCoordinates;
         }
